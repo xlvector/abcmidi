@@ -1,5 +1,5 @@
-abcMIDI :   abc &lt;-&gt; MIDI conversion utilities
-===================================================
+abcMIDI :   abc <-> MIDI conversion utilities
+=============================================
 midi2abc version 2.92 Aug  04 2008
 abc2midi version 2.94 Oct  03 2012
 abc2abc  version 1.68 Aug  08 2012
@@ -27,18 +27,19 @@ This package is to be found on the web at
 
 http://abc.sourceforge.net/abcMIDI/
 (The latest versions for the time being is found on
-ifdo.pugmarks.com/~seymour/runabc/top.html.)
+http://ifdo.pugmarks.com/~seymour/runabc/top.html .)
 
 Note, if you have difficulty compiling the package because you do not have
 snprintf see the note in `doc/CHANGES` dated January 08 2005 (and also
 December 17 2004).
 
-These programs make use of the `midifilelib` public domain MIDI file utilities,
+These programs make use of the '`midifilelib`' public domain MIDI file utilities,
 available from:
+
 http://www.harmony-central.com/MIDI/midifilelib.tar.gz
 
 If you have the source distribution and intend to re-compile the code,
-read the file `coding.txt`.
+read the file '`coding.txt`'.
 
 ---------------------------------------------------------------------
 midi2abc - program to convert MIDI format files to abc notation. 
@@ -236,6 +237,7 @@ the same track as the notes. See `doc/CHANGES`.
 abc2midi  - converts abc file to MIDI file(s).
 ----------------------------------------------
 Usage :
+-------
     abc2midi <abc file> [reference number] [-c] [-v] [-o filename] [-t] [-n <value>] [-ver] [-NFNP] [-NFER] [-NGRA] [-STFW] [-NCOM] [-OCC]
         [reference number] selects a tune
         -c  selects checking only
@@ -323,8 +325,8 @@ Bugs and Limitations :
 -------------------------------------------------------------------------
 abc2abc
 -------
-
 Usage:
+------
     abc2abc <filename> [-s] [-n X] [-b] [-r] [-e] [-t X] [-u] [-d] [-v] [-V X] [-ver] [-X n]
         -s for new spacing
         -n X to re-format the abc with a new linebreak every X bars
@@ -374,11 +376,8 @@ field commands such as `K:` or `L:` following the voice `X` declaration,
 so that they will be converted and appear in the output.
 
 The output of abc2abc is printed to the screen. To save it to a file, use
-the redirection operator.
-
-e.g.
-
-`abc2abc file.abc -t 2 > newfile.abc`
+the redirection operator. e.g.
+    abc2abc file.abc -t 2 > newfile.abc
 
 Known problems:
 * When using the `-n` option on a program with lyrics, a barline in a w:
@@ -403,9 +402,10 @@ midicopy is a stand alone application which copies a midi file or part
 of a midi file to a new midi file. If you run it with no parameters, a
 short description shown below will appear.
 
-usage:
+Usage:
+------
     midicopy <options> input.mid output.mid
-midicopy copies selected tracks, channels, time interval of the input midi file.options:
+`midicopy` copies selected tracks, channels, time interval of the input midi file.options:
     -ver  version information
     -trks n1,n2,... (starting from 1)
     -chns n1,n2,... (starting from 1)
@@ -418,10 +418,9 @@ midicopy copies selected tracks, channels, time interval of the input midi file.
     midicopy.exe -ver
 
 will print out something like 
-
     1.00 July 11 2004
 
-`midicopy.exe input.mid output.mid`
+    midicopy.exe input.mid output.mid
 does nothing interesting except copy the contents of input.mid to a
 new file `output.mid`.
 
