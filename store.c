@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "2.94 Oct 03 2012"
+#define VERSION "2.95 Nov 03 2012"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -2331,9 +2331,13 @@ int n, m, dochecking;
   if (dotune) {
     if (pastheader) {
       addfeature(TIME, dochecking, n, m);
+      mtime_num = n; /* [SS] 2012-11-03 */
+      mtime_denom = m; /* [SS] 2012-11-03 */
     } else {
       time_num = n;
       time_denom = m;
+      mtime_num = n; /* [SS] 2012-11-03 */
+      mtime_denom = m; /* [SS] 2012-11-03 */
       timesigset = 1;
       barchecking = dochecking;
     };
@@ -2748,7 +2752,9 @@ int n, m;
 /* it is not legal to pass a fermata to a multirest */
 
   for (i=0; i<n; i++) {
-    event_rest(decorators,time_num*(v->default_length), time_denom,0);
+    /* [SS] 2012-11-03 */
+    /*event_rest(decorators,time_num*(v->default_length), time_denom,0);*/
+    event_rest(decorators,mtime_num*(v->default_length), mtime_denom,0);
     if (i != n-1) {
       event_bar(SINGLE_BAR, "");
     };

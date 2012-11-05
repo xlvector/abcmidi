@@ -9144,3 +9144,43 @@ Chinese character support in lyrics was added to abc2midi by
 Bow Yi Jang <byjang61@gmail.com>. Changes were restricted to
 the function getword(.) in genmidi.c
 
+
+November 03 2012
+
+Abc2midi multirest bug. In the following example,
+
+X:1
+T: multirest problem
+M: 2/4
+L: 1/8
+K: G
+Z|G4|\
+M:3/4
+L:1/8
+Z|D6|
+
+The second multirest preceding D6 is held for two beats instead of
+three and the warning
+Warning in line 9 : Bar 2 has 2 units instead of 3
+appears.
+
+Analysis: the function event_mrest (store.c)  uses the initial time
+signature 2/4 stored in time_num/time_denom which does not get updated by
+event_timesig() once the parser is in the body. abc2midi must keep
+track of two time signatures: time_num/time_denom which is declared in
+the initial field commands and mtime_num/mtime_denom which may be
+updated in the middle of the body. The initial time signature, is
+important for multivoiced tunes where the initial declaration is carried
+to the start of all the voices. The active time signature
+mtime_num/mtime_denom is only updated in the second stage in
+set_meter() when genmidi is processing the feature[] array and
+writing the MIDI tracks. However, the active time signature is
+also needed when event_mrest is called to write multiple bars
+of rests. Unfortunately, the active time signature was not maintained
+during the initial parsing stage (first stage).
+
+Fix: the variables mtime_num and mtime_num are now also used
+during the first pass and maintained in event_timesig(). event_mrest()
+uses the active time signature mtime_num/mtime_denom rather than
+the initial time signature time_num/time_denom.
+
