@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "2.95 Nov 03 2012"
+#define VERSION "2.96 Nov 08 2012"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -125,11 +125,16 @@ int retuning = 0; /* [SS] 2012-04-01 */
 int bend = 8192; /* [SS] 2012-04-01 */
 
 struct voicecontext {
+/* not to be confused with struct voice defined in struct.h and
+   used only by yaps.
+*/
   /* maps of accidentals for each stave line */
   char basemap[7], workmap[7][10];
   int  basemul[7], workmul[7][10];
   int  keyset; /* flag to indicate whether key signature set */
   int default_length;
+  int active_meter_num; /* [SS] 2012-11-08 */
+  int active_meter_denom; /* [SS] 2012-11-08 */
   int voiceno; /* voice number referenced by V: command. To avoid
                   conflicts with split voices, all split voices
                   begin from 32. */
@@ -331,6 +336,10 @@ int n;
   s->topvoiceno = n;
   s->topindexno = voicecount;
   s->default_length = global.default_length;
+  s->active_meter_num = time_num;     /* [SS] 2012-11-08 */
+  s->active_meter_denom = time_denom; /* [SS] 2012-11-08 */
+  mtime_num = time_num;     /* [SS] 2012-11-08 */
+  mtime_denom = time_denom; /* [SS] 2012-11-08 */
   s->hasgchords = 0;
   s->haswords = 0;
   s->hasdrums = 0;
@@ -401,6 +410,8 @@ int n;
         }
       };
     }
+  mtime_num = p->active_meter_num; /* [SS] 2012-11-08 */
+  mtime_denom = p->active_meter_denom; /* [SS] 2012-11-08 */
   return(p);
 }
 
@@ -2333,11 +2344,19 @@ int n, m, dochecking;
       addfeature(TIME, dochecking, n, m);
       mtime_num = n; /* [SS] 2012-11-03 */
       mtime_denom = m; /* [SS] 2012-11-03 */
+      if (v != NULL) {
+        v->active_meter_num =  n; /* [SS] 2012-11-08 */
+        v->active_meter_denom =  m; /* [SS] 2012-11-08 */
+        }
     } else {
       time_num = n;
       time_denom = m;
       mtime_num = n; /* [SS] 2012-11-03 */
       mtime_denom = m; /* [SS] 2012-11-03 */
+      if (v != NULL) {
+        v->active_meter_num =  n; /* [SS] 2012-11-08 */
+        v->active_meter_denom =  m; /* [SS] 2012-11-08 */
+        }
       timesigset = 1;
       barchecking = dochecking;
     };

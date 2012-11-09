@@ -9184,3 +9184,32 @@ during the first pass and maintained in event_timesig(). event_mrest()
 uses the active time signature mtime_num/mtime_denom rather than
 the initial time signature time_num/time_denom.
 
+
+November 08 2012
+
+Abc2midi: multirest bug part 2. The problem with meter change and
+multirests persists in multivoiced tunes. In the following example,
+
+X:1
+T: Multirest bug part 2
+M:C
+L:1/4
+K:F
+V: 1
+V: 2
+%%MIDI program 1 73
+%%MIDI program 2 40
+%%staves [{ 1  2 }]
+[V: 1] F A z c| z4 | [M:3/8][L:1/8] F/>G/ FA|B/>c/ BA | G/>A/ GF|C3|]
+[V: 2] A F3   | Z | [M:3/8][L:1/8] Z | G/>A/ GA | B/>c/ BA | G3|]
+
+The first multirest Z in voice 2 is held for 3/8 instead of of 1/4.
+
+Analysis: voice 1 changes mtime_num/mtime_denom to 3/8 and it
+remains in that state at the start of voice 2.
+
+Fix: new variables int active_meter_num, active_meter_denom are
+introduced into the voicecontext struct. They are used to maintain
+the values of mtime_num and mtime_denom over voice switches.
+
+
