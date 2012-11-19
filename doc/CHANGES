@@ -9213,3 +9213,11 @@ introduced into the voicecontext struct. They are used to maintain
 the values of mtime_num and mtime_denom over voice switches.
 
 
+November 15 2012
+
+Abc2midi extension: abc2midi treats Xn the same way as Zn, to be
+compatible with the new version of abcm2ps. Fix in parseabc.c added
+case 'X': /* [SS] 2012-11-15 */
+after case 'Z':
+
+

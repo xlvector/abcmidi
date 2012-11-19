@@ -1938,13 +1938,15 @@ char* field;
 	};
 /* full bar rest */
       case 'Z':
+      case 'X':  /* [SS] 2012-11-15 */
+
         {
           int n, m;
 
           p = p + 1;
           readlen(&n, &m, &p);
           if (m != 1) {
-            event_error("Z must be followed by a whole integer");
+            event_error("X or Z must be followed by a whole integer");
           };
           event_mrest(n, m);
           break;
