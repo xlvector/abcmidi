@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "2.97 Nov 15 2012"
+#define VERSION "3.00 Nov 25 2012"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -369,6 +369,8 @@ int n;
   s->keyset = global.keyset;
   s->octaveshift = global.octaveshift;
   s->drumchannel = 0;
+  if (voicecount < 0 || voicecount >63)
+     printf("illegal voicecount = %d\n",voicecount); /* [SS] 2012-11-25 */
   vaddr[voicecount] = s;
   return(s);
 }
@@ -764,6 +766,8 @@ char **filename;
   decotype  = checkmalloc(maxnotes*sizeof(int)); /* [SS] 2012-06-29 */
   feature = (featuretype*) checkmalloc(maxnotes*sizeof(featuretype));
   pitchline = checkmalloc(maxnotes*sizeof(int));
+  for (j=0; j<maxnotes; j++)           /* [SS] 2012-11-25 */
+       bentpitch[j] = decotype[j] = 0; /* [SS] 2012-11-25 */
   for (j=0;j<DECSIZE;j++)  dummydecorator[j] = 0;
 
   /* and for text */
@@ -1261,6 +1265,10 @@ int maxnotes;
   ptr2 = checkmalloc(newlimit*sizeof(int));
   ptr3 = checkmalloc(newlimit*sizeof(int));
   ptr4 = checkmalloc(newlimit*sizeof(int)); /* [SS] 2012-06-29 */
+  for (i=0; i<newlimit; i++) {
+      ptr3[i] = 0;
+      ptr4[i] =0;
+      }      
   for(i=0;i<maxnotes;i++){
     ptr[i] = pitch[i];
     ptr2[i] = pitchline[i];
@@ -3052,6 +3060,8 @@ int pitch;
   s->bendup = bend_up;
   s->benddown = bend_down;
   s->default_length = global.default_length;
+  if (notesdefined < 0 || notesdefined>999)
+      printf("illegal notesdefined = %d\n",notesdefined);
   noteaddr[notesdefined] = s;
   if (notesdefined < 1000) notesdefined++;
 }
@@ -3165,6 +3175,8 @@ int pitch;
   s->default_length = global.default_length;
   s->bendup = bend;
   s->benddown = active_pitchbend;
+  if (notesdefined < 0 || notesdefined>999)
+      printf("illegal notesdefined = %d\n",notesdefined);
   noteaddr[notesdefined] = s;
   if (notesdefined < 1000) notesdefined++;
   }
@@ -3982,7 +3994,7 @@ int j, xinchord,voiceno;
       event_error("Could not find note to be tied");
     };
   };
-/*printf("dotie finished\n");*/ 
+/*if (verbose > 3) printf("dotie finished\n"); */
 }
 
 static void fix_enclosed_note_lengths(int from, int end) 
@@ -4088,6 +4100,7 @@ static void tiefix()
       break;
     };
   };
+if (verbose >3) printf("tiefix finished\n");
 }
 
 static void applygrace_orig(int);
@@ -4356,6 +4369,7 @@ static void dograce()
     };
     j = j + 1;
   };
+if (verbose >3) printf("dograce finished\n");
 }
 
 static void zerobar()
@@ -4945,7 +4959,7 @@ for (i=0;i<notes;i++) {
   }
 if (num2add > 0) 
  add_missing_repeats (); 
-
+if (verbose >3) printf("scan_for_missing_repeats finished\n");
 }
 
 
@@ -4962,12 +4976,37 @@ for (i = num2add-1; i >= 0; i--) {
   }
 }
 
-/* [SS] 2012-05-30 */
+/* [SS] 2012-11-23 */
+void convert_tnote_to_note (int loc) {
+/* tied notes TNOTE are handled in a different
+   manner by genmidi so we need to change it
+   to NOTE so it expand_ornament can process
+   it. We change TNOTE to NOTE and eliminate the
+   RESTS associated with TNOTE
+*/
+int i,j,pitchflag;
+feature[loc] = NOTE;
+/* Look ahead and remove the REST associated with TNOTE    */
+/* The last REST in the TNOTE sequence has a nonzero pitch */
+j=loc;
+for (i=0;i<6;i++) {
+  if(feature[j] == REST) {
+    pitchflag = pitch[j];
+    removefeature(j);
+    if (pitchflag != 0) break;
+    } else j++; 
+  }
+}
+
+
+
+/* [SS] 2012-05-30  2012-11-23 */
 void expand_ornaments () {
 int i;
 struct notestruct *s;
 int notetype,deco_index;
 for (i=0;i<notes;i++) {
+  if (decotype[i] != 0 && feature[i] == TNOTE) convert_tnote_to_note(i);
   if (decotype[i] != 0 && feature[i] == NOTE) {
       deco_index = decotype[i];
       s =  noteaddr[deco_index];
@@ -4984,6 +5023,7 @@ for (i=0;i<notes;i++) {
       }
   }
 /*dump_notestruct();*/
+if (verbose> 3) printf("expand_ornaments finished\n");
  }
 
 
@@ -5027,6 +5067,7 @@ static void finishfile()
     if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
  
     expand_ornaments();
+    if (verbose > 5) dumpfeat(0,notes);
 
     if (check) {
       Mf_putc = nullputc;

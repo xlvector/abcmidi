@@ -9221,3 +9221,94 @@ case 'X': /* [SS] 2012-11-15 */
 after case 'Z':
 
 
+November 21 2012
+
+Abc2midi: verbose option provides more detail if set to 4 or 5 for
+tracking segmentation errors.
+
+
+
+November 22 2012
+
+The fixes for the following two problems were provided
+by Philippe De Muyter.
+
+The input line size in parseabc.c was increased from 256 to 512
+to accommodate abc files that are automatically generated (eg midi2abc).
+char inputline[512];
+
+
+Abc2abc truncates the voice ids when it encounters the first
+invalid character without giving any warning. eg.
+
+X:1
+T: invalid voice
+M: 2/4
+L: 1/8
+K: G
+V: A_1
+abcd|
+V: A_2
+DEFG|
+
+only one voice is detected.
+
+Fix:
+In interpret_voicestring() in parseabc.c the following code was added
+after c = readword(code,s);
+
+if (*c != '\0' && *c != ' ' && *c != ']') {
+     sprintf(msg, "invalid character `%c' in Voice ID", *c);
+     event_error(msg);
+    }
+
+Now abc2abc and abc2midi complain that they encountered an invalid
+character.
+
+
+November 23 2012
+
+abc2midi bug: unable to trill or roll tied notes. In the following
+example
+
+X:1
+T:trill-issue
+M:2/4
+L:1/8
+K:F
+V: 1
+z4|z3d|
+V: 2
+%%MIDI program 1 73
+%%MIDI program 2 40
+ TF2   Tc2-| c Tf2-f|
+
+The tied notes c2-c and f2-f do not get trilled.
+
+Analysis: this bug was introduced on July 03 2012 in the attempt
+to fix other problems associated with trills. The function
+expand_ornaments() only processes NOTE features and ignores
+TNOTE features used to designate tied notes.
+
+Fix: The solution is to change TNOTE to a NOTE. However,
+writetrack() in genmidi.c processes TNOTE features in a special way
+in order that checkbar() will work when a tied note extends
+over a measure. The TNOTE invokes a midi on command but a midi
+off command is deduced from the following REST(s) which are
+associated with the tied note. Therefore, if we change TNOTE
+to a NOTE we also need to eliminate the REST(s) which are
+part of the TNOTE sequence. This is done by a new function,
+convert_tnote_to_note(). Unfortunately, this is not a clean fix.
+Checkbar() will give a misleading message when the tied note
+extends over a measure. Also, lyrics may not align correctly
+with tied and trilled notes. It gets messy to make expand_ornaments()
+to split up a trill across a measure.
+
+
+November 25 2012
+
+Abc2midi: the compiler on Windows PC does not initialize arrays
+to zero when they are allocated. As a protection the arrays the bentpitch
+and decotype are now initialized to 0 when they are allocated.
+Some array pointers are now checked for valid values.
+

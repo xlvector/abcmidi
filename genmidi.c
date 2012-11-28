@@ -80,6 +80,7 @@ extern int chordlen[MAXCHORDNAMES];
 /* these 6 arrays are used to hold the tune data */
 extern int *pitch, *num, *denom;
 extern int *bentpitch;
+extern int *decotype; /* [SS] 2012-11-25 */
 extern featuretype *feature;
 extern int *stressvelocity; /* [SS] 2011-08-17 */
 extern int notes;
@@ -232,6 +233,27 @@ float maxdur;   /* maximum duration */
 int segnum,segden; /* segment width computed from M: and L: parameters*/
 float fdur[32]; /* duration modifier for each segment */
 float fdursum[32]; /* for mapping segment address into a position */
+
+char *featname[] = {
+"SINGLE_BAR", "DOUBLE_BAR", "BAR_REP", "REP_BAR",
+"PLAY_ON_REP", "REP1", "REP2", "BAR1",
+"REP_BAR2", "DOUBLE_REP", "THICK_THIN", "THIN_THICK",
+"PART", "TEMPO", "TIME", "KEY",
+"REST", "TUPLE", "NOTE", "NONOTE",
+"OLDTIE", "TEXT", "SLUR_ON", "SLUR_OFF",
+"TIE", "CLOSE_TIE", "TITLE", "CHANNEL",
+"TRANSPOSE", "RTRANSPOSE", "GTRANSPOSE", "GRACEON",
+"GRACEOFF", "SETGRACE", "SETC", "SETTRIM", "GCHORD",
+"GCHORDON", "GCHORDOFF", "VOICE", "CHORDON",
+"CHORDOFF", "CHORDOFFEX", "DRUMON", "DRUMOFF",
+"DRONEON", "DRONEOFF", "SLUR_TIE", "TNOTE",
+"LT", "GT", "DYNAMIC", "LINENUM",
+"MUSICLINE", "MUSICSTOP", "WORDLINE", "WORDSTOP",
+"INSTRUCTION", "NOBEAM", "CHORDNOTE", "CLEF",
+"PRINTLINE", "NEWPAGE", "LEFT_TEXT", "CENTRE_TEXT",
+"VSKIP", "COPYRIGHT", "COMPOSER", "ARPEGGIO",
+"SPLITVOICE", "META", "PEDAL_ON", "PEDAL_OFF"
+}; 
 
 void reduce(a, b)
 /* elimate common factors in fraction a/b */
@@ -2669,6 +2691,7 @@ int xtrack;
   was_slurring = 0; /* [SS] 2011-11-30 */
   expect_repeat = 0;
   while (j < notes) {
+    if (verbose >4) printf("%d %s\n",j,featname[feature[j]]); /* [SS] 2012-11-21*/
     switch(feature[j]) {
     case NOTE:
 	onemorenote = 0;
@@ -3142,26 +3165,6 @@ int xtrack;
 }
 
 
-char *featname[] = {
-"SINGLE_BAR", "DOUBLE_BAR", "BAR_REP", "REP_BAR",
-"PLAY_ON_REP", "REP1", "REP2", "BAR1",
-"REP_BAR2", "DOUBLE_REP", "THICK_THIN", "THIN_THICK",
-"PART", "TEMPO", "TIME", "KEY",
-"REST", "TUPLE", "NOTE", "NONOTE",
-"OLDTIE", "TEXT", "SLUR_ON", "SLUR_OFF",
-"TIE", "CLOSE_TIE", "TITLE", "CHANNEL",
-"TRANSPOSE", "RTRANSPOSE", "GTRANSPOSE", "GRACEON",
-"GRACEOFF", "SETGRACE", "SETC", "SETTRIM", "GCHORD",
-"GCHORDON", "GCHORDOFF", "VOICE", "CHORDON",
-"CHORDOFF", "CHORDOFFEX", "DRUMON", "DRUMOFF",
-"DRONEON", "DRONEOFF", "SLUR_TIE", "TNOTE",
-"LT", "GT", "DYNAMIC", "LINENUM",
-"MUSICLINE", "MUSICSTOP", "WORDLINE", "WORDSTOP",
-"INSTRUCTION", "NOBEAM", "CHORDNOTE", "CLEF",
-"PRINTLINE", "NEWPAGE", "LEFT_TEXT", "CENTRE_TEXT",
-"VSKIP", "COPYRIGHT", "COMPOSER", "ARPEGGIO",
-"SPLITVOICE", "META", "PEDAL_ON", "PEDAL_OFF"
-}; 
 
 void dumpfeat (int from, int to)
 {
@@ -3169,7 +3172,8 @@ int i,j;
 for (i=from;i<=to;i++)
   {
   j = feature[i]; 
-  printf("%d %s   %d %d %d %d \n",i,featname[j],pitch[i],bentpitch[i],num[i],denom[i]);
+  if (j<0 || j>72) printf("illegal feature[%d] = %d\n",i,j); /* [SS] 2012-11-25 */
+  else printf("%d %s   %d %d %d %d %d \n",i,featname[j],pitch[i],bentpitch[i],decotype[i],num[i],denom[i]);
   }
 }
 
