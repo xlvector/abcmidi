@@ -9312,3 +9312,70 @@ to zero when they are allocated. As a protection the arrays the bentpitch
 and decotype are now initialized to 0 when they are allocated.
 Some array pointers are now checked for valid values.
 
+
+December 01 2012 -- submitted by Philippe de Muyter
+
+abc2abc truncates a line to 512 characters without warning in the
+-P mode. (This is the continuation of the changes November 22 2012.)
+
+Analysis event_error is muted during the output so it is necessary
+to simulate it with a plain printf in the function print_inputline_nolinefeed()
+in the file parseabc.c.
+
+December 11 2012
+
+abc2midi: bend note, new feature. Placing the instruction !bend! slides
+the pitch of the following note up.
+
+For examples:
+
+X:1
+T: pitchbend
+M: 6/8
+L: 1/8
+K: Gdor
+%%MIDI program 78 whistle
+%%MIDI transpose 12
+DEF G3|DEF !bend!G3|
+
+the second G is slid up.
+
+
+Implementation: added a new function note_effect to queues.c which
+is called by timestep(). Note effect inserts a sequence of pitch bend
+events prior to sending a MIDI note off. Added a new integer member,
+effect, to struct Qitem. The flag, effect, determines whether note_effect
+is invoked. An additional parameter, effect, was added to the function
+addtoQ which is also defined in queues.c. The function addtoQ is called
+in many places in genmidi.c. In abc.h added a new feature called
+EFFECT. The feature is inserted before a note when the instruction
+!bend! is encountered --  see event_handle_instruction() in store.c. 
+In genmidi.c added a global flag, effecton, which is usually set to
+zero except when the EFFECT feature is encountered. The NOTE: handler
+in writetrack returns effecton in one of the addtoQ function
+calls.
+
+
+December 12 2012
+
+abc2midi: bend configuration. Introduced two variables bendvelocity and
+bendacceleration into note_effect. Note_effect inserts 8 MIDI pitchbends
+equally spaced inside a note. The pitchbend is initialized to the neutral
+value of 8192. During the loop repeated 8 times, pitchbend and 
+bandvelocity are incremented as follows.
+
+pitchbend = pitchbend + bendvelocity
+bendvelocity = bendvelocity + bendacceleration.
+
+The pitchbend is limited between 0 and 16383 usually corresponding
+to a negative and positive shift of two semitones on most General
+MIDI instruments.
+
+The variables bendvelocity and bendacceration can be set by the 
+following  %%MIDI command.
+
+%%MIDI bendvelocity n1 n2
+
+where the integers n1 and n2 are the velocities and acceleration
+respectively.  By default, n1 and n2 are initialized to 100 and 200.
+

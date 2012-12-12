@@ -37,6 +37,7 @@
 #include "queues.h"
 #include "abc.h"
 #include "genmidi.h"
+#include "midifile.h"
 
 /* queue for notes waiting to end */
 /* allows us to do general polyphony */
@@ -45,12 +46,15 @@ struct Qitem {
   int delay;
   int pitch;
   int chan;
+  int effect;  /* [SS] 2012-12-11 */
   int next;
 };
 struct Qitem Q[QSIZE+1];
 int Qhead, freehead, freetail;
 extern int totalnotedelay; /* from genmidi.c [SS] */
 extern int notedelay;      /* from genmidi.c [SS] */
+extern int bendvelocity;   /* from genmidi.c [SS] */
+extern int bendacceleration; /* from genmidi.c [SS] */
 
 /* routines to handle note queue */
 
@@ -64,8 +68,9 @@ extern int notedelay;      /* from genmidi.c [SS] */
 /* at the same as specifiedy abc standard, so the delay of the*/
 /* other notes cached in the Q structure should be set to zero.*/
 
-void addtoQ(num, denom, pitch, chan, d)
+void addtoQ(num, denom, pitch, chan, effect, d)
 int num, denom, pitch, chan, d;
+int effect; /* [SS] 2012-12-11 */
 {
   int i, done;
   int wait;
@@ -83,6 +88,7 @@ int num, denom, pitch, chan, d;
   };
   Q[i].pitch = pitch;
   Q[i].chan = chan;
+  Q[i].effect = effect;  /* [SS] 2012-12-11 */
   /* find place in queue */
   ptr = &Qhead;
   done = 0;
@@ -243,6 +249,36 @@ void Qcheck()
   };
 }
 
+
+/* [SS] 2012-12-11 */
+void note_effect() {
+  int delta8;
+  int pitchbend;
+  char data[2];
+  int i;
+  int velocity;
+  delta8 = delta_time/8;
+  pitchbend = 8192; 
+  velocity = bendvelocity;
+  for (i=0;i<8;i++) {
+     pitchbend = pitchbend + velocity;
+     velocity = velocity + bendacceleration;
+     if (pitchbend > 16383) pitchbend = 16383;
+     if (pitchbend < 0) pitchbend = 0;
+ 
+     data[0] = (char) (pitchbend&0x7f);
+     data[1] = (char) ((pitchbend>>7)&0x7f);
+     mf_write_midi_event(delta8,pitch_wheel,Q[Qhead].chan,data,2);
+     delta_time -= delta8;
+     }
+  midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
+  pitchbend = 8192;
+  data[0] = (char) (pitchbend&0x7f);
+  data[1] = (char) ((pitchbend>>7)&0x7f);
+  mf_write_midi_event(delta_time,pitch_wheel,Q[Qhead].chan,data,2);
+  }
+
+
 /* timestep is called by delay() in genmidi.c typically at the */
 /* end of a note, chord or rest. It is also called by clearQ in*/
 /* this file. Timestep, is not only responsible for sending the*/
@@ -281,10 +317,16 @@ int atend;
         progress_sequence(Q[Qhead].chan);
       };
     } else {
-      midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
-      tracklen = tracklen + delta_time;
-      delta_time = 0L;
-    };
+       if (Q[Qhead].effect == 0) {
+          midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
+          tracklen = tracklen + delta_time;
+          delta_time = 0L;}
+       else {
+          note_effect();  /* [SS] 2012-12-11 */
+          tracklen = tracklen + delta_time;
+          delta_time = 0L;}
+       };
+
     removefromQ(Qhead);
   };
   if (Qhead != -1) {
@@ -293,3 +335,4 @@ int atend;
   delta_time = delta_time + (long)time - totalnotedelay;
   delta_time_track0 = delta_time_track0 + (long)time - totalnotedelay; /* [SS] 2010-06-27*/
 }
+

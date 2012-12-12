@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.00 Nov 25 2012"
+#define VERSION "3.01 Dec 12 2012"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -3744,6 +3744,11 @@ if (nofnop == 0) {
     decorators_passback[BREATH] =1;
     done = 1;
     };
+
+ if (strcmp(s, "bend") == 0) {   /* [SS] 2012-12-11 */
+   addfeature(EFFECT, 1, 0, 0);
+   done = 1;
+  };
 
   if (done == 0) {
     sprintf(buff, "instruction !%s! ignored", s);

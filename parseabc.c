@@ -1702,16 +1702,26 @@ char* p;
   return(q);
 }
 
-/* this function is used by toabc.c [SS] 2011-06-07 */
-void print_inputline ()
-{
-printf("%s\n",inputline);
-}
-
 /* this function is used by toabc.c [SS] 2011-06-10 */
 void print_inputline_nolinefeed ()
 {
+if (inputline[sizeof inputline - 1] != '\0') {
+  /*
+   * We are called exclusively by toabc.c,
+   * and when we are called, event_error is muted,
+   * so, event_error("input line truncated") does nothing.
+   * Simulate it with a plain printf. [PHDM 2012-12-01]
+   */
+  printf("%%Error : input line truncated\n");
+}
 printf("%s",inputline);
+}
+
+/* this function is used by toabc.c [SS] 2011-06-07 */
+void print_inputline ()
+{
+print_inputline_nolinefeed();
+printf("\n");
 }
 
 void parsemusic(field)
@@ -2106,8 +2116,7 @@ char* line;
   char *p, *q;
 
 /*  printf("%d parsing : %s\n", lineno, line);  */
-/***** strncpy(inputline,line,256);  [SS] 2011-06-07 */
-  strncpy(inputline,line,sizeof inputline); /* [PHDM] 2012-11-22 */
+  strncpy(inputline,line,sizeof inputline); /* [SS] 2011-06-07 [PHDM] 2012-11-27 */
 
   p = line;
   linestart = p;  /* [SS] 2011-07-18 */

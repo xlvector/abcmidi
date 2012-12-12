@@ -89,6 +89,7 @@ SPLITVOICE,
 META,
 PEDAL_ON,
 PEDAL_OFF,
+EFFECT,
 } featuretype;
 
 /* note decorations */
