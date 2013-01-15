@@ -9379,3 +9379,33 @@ following  %%MIDI command.
 where the integers n1 and n2 are the velocities and acceleration
 respectively.  By default, n1 and n2 are initialized to 100 and 200.
 
+
+December 25 2012
+
+Abc2midi part/trill bug. Introducing trills or ornaments in a
+multipart abc file causes erratic behaviour. For example,
+
+X:1
+T:parts
+M:2/4
+L:1/8
+P:B
+K:C
+P:A
+CDEF|TGABc|
+P:B
+cBAG|FEDC|
+
+Part B is not played when the trill is present in part A.
+
+Analysis, abc2midi stores the start position of each part in
+the array part_start during the parsing stage. Unfortunately,
+things may move around during the later stages. The function
+expand_ornaments() inserts additional notes in the feature
+arrays when it does its expansion. This shifts the position
+of the parts and the information in the part_start array is
+no longer valid.
+
+Fix: created a new function fix_part_start() in store.c which
+is called after expand_ornaments() in finishfile().
+

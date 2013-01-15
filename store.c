@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.01 Dec 12 2012"
+#define VERSION "3.02 Dec 25 2012"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -5031,6 +5031,21 @@ for (i=0;i<notes;i++) {
 if (verbose> 3) printf("expand_ornaments finished\n");
  }
 
+/* [SS] 2012-12-25 */
+void fix_part_start () 
+/* update part_start array in case things have moved around */
+{
+int i;
+int partnum;
+for (i=0;i<notes;i++) {
+  if (feature[i] == PART) {
+    /*printf("%d PART %d\n",i,pitch[i]); */
+    partnum = pitch[i]-65;
+    if (partnum >= 0 && partnum < 26) part_start[partnum] = i;
+    }
+  }
+}
+
 
 
 
@@ -5072,6 +5087,7 @@ static void finishfile()
     if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
  
     expand_ornaments();
+    if (parts >= 0) fix_part_start(); /* [SS] 2012-12-25 */
     if (verbose > 5) dumpfeat(0,notes);
 
     if (check) {
