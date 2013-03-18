@@ -19,7 +19,7 @@ tied notes longer than 8 quarter notes are ignored.
 
 
 
-#define VERSION "1.43 August 08 2012"
+#define VERSION "1.46 February 26 2013"
 #include <stdio.h>
 #include <stdlib.h>
 #include "abc.h"
@@ -79,7 +79,7 @@ int qnt = 0; /* pitch difference quantization flag */
 int brief = 0;  /* set brief to 1 if brief mode */
 int cthresh =3; /* minimum number of common bars to report */ 
 int fileindex = -1;
-int phist,lhist;  /* flags for computing pitch or length histogram */
+int wphist,phist,lhist;  /* flags for computing pitch or length histogram */
 
 /* data structure for matcher (template) (usually match.abc)*/
 int mmidipitch[1000]; /*pitch-barline representation for template */
@@ -92,6 +92,7 @@ int mmaxnotes = 1000; /* maximum limits of this program */
 int mmaxbars  = 300;
 
 int pitch_histogram[128];
+int weighted_pitch_histogram[128];
 int length_histogram[144];
 
 /* compute the midi offset for the key signature. Since
@@ -253,6 +254,7 @@ void init_histograms()
 {
 int i;
 for (i=0;i<128;i++) pitch_histogram[i] =0;
+for (i=0;i<128;i++) weighted_pitch_histogram[i] =0;
 for (i=0;i<144;i++) length_histogram[i] =0;
 }
  
@@ -263,7 +265,9 @@ int i,index;
 for (i=0;i<innotes;i++)
  {
  index =  imidipitch[i];
+ if (index < 0) continue; /* [SS] 2013-02-26 */
  pitch_histogram[index]++;
+ weighted_pitch_histogram[index] += inotelength[i];
  index =  inotelength[i];
  if (index > 143) index =143;
  length_histogram[index]++;
@@ -284,11 +288,21 @@ for (i=0;i<144;i++)
 void print_pitch_histogram()
 {
 int i;
-printf("\n\npitch_histogram\n");
+printf("pitch_histogram\n");
 for (i=0;i<128;i++)
   if(pitch_histogram[i] > 0)
      printf("%d %d\n",i,pitch_histogram[i]);
 }
+
+void print_weighted_pitch_histogram()
+{
+int i;
+printf("weighted_pitch_histogram\n");
+for (i=0;i<128;i++)
+  if(weighted_pitch_histogram[i] > 0)
+     printf("%d %d\n",i,weighted_pitch_histogram[i]);
+}
+
 
 
 
@@ -631,12 +645,13 @@ char **filename;
     sscanf(argv[j],"%d",&cthresh); 
     brief=1;
     }
-
+  wphist = getarg("-wpitch_hist",argc,argv);
   phist = getarg("-pitch_hist",argc,argv);
   lhist = getarg("-length_hist",argc,argv);
 
-  if (phist >= 0) phist = 1; else phist = 0;
-  if (lhist >= 0) lhist = 1; else lhist = 0;
+  if (phist >= 0) {phist = 1; brief=1;}  else phist = 0;
+  if (lhist >= 0) {lhist = 1; brief=1;} else lhist = 0;
+  if (wphist >= 0) {wphist = 1; brief=1;} else wphist = 0;
 
   if (brief == 1) resolution=0; /* do not compute msamples in main() */
   maxnotes = 3000;
@@ -664,6 +679,7 @@ char **filename;
 	    above given threshold\n");
     printf("        -ver returns version number\n");
     printf("        -pitch_hist pitch histogram\n");
+    printf("        -wpitch_hist interval weighted pitch histogram\n");
     printf("        -length_hist pitch histogram\n");
     exit(0);
   } else {
@@ -707,7 +723,7 @@ char *argv[];
    runabc.tcl when you are using this search function.
 */
  
-if (!(phist | lhist)) {  /* if not computing histograms */
+if (!(phist | lhist | wphist)) {  /* if not computing histograms */
   parsefile("match.abc");
   mkey = sf2midishift[sf+7];
   mseqno = xrefno; /* if -br mode, X:refno is file sequence number */
@@ -763,10 +779,10 @@ if (!(phist | lhist)) {  /* if not computing histograms */
     /*print_feature_list();*/
     make_note_representation(&innotes, &inbars, imaxnotes, imaxbars,
       &itimesig_num, &itimesig_denom,ibarlineptr,inotelength,imidipitch);
-    if (phist || lhist) compute_note_histograms();  else
+    if (phist || lhist || wphist) compute_note_histograms();  else
 
 /* ignore tunes which do not share the same time signature as the template */
-   if (itimesig_num != mtimesig_num || itimesig_denom != mtimesig_denom) continue;
+      if (itimesig_num != mtimesig_num || itimesig_denom != mtimesig_denom) continue;
     transpose = mkey-ikey;
 
 /* brief mode is used by the grouper in runabc.tcl */
@@ -791,6 +807,7 @@ if (!(phist | lhist)) {  /* if not computing histograms */
   free_feature_representation();
   fclose(fp);
   if (phist)  print_pitch_histogram();
+  if (wphist)  print_weighted_pitch_histogram();
   if (lhist)  print_length_histogram(); 
   return(0);
 }

@@ -8770,7 +8770,7 @@ it is creating the midi file lamb2.mid. In most cases the position
 of the missing left repeat |: can be inferred, (in particular if
 it is at the beginning of the tune). However, in some cases the
 missing repeat is put at the wrong place or abc2midi fails to
-apply the repeat. In July 23 2009 new code was introduced to 
+apply the repeat. In June 23 2009 new code was introduced to 
 address this problem since it is proper for the left repeat to be
 omitted when it should occur at the beginning of the tune. 
 The new functions scan_for_missing_repeats(), add_missing_repeats(),
@@ -8887,7 +8887,7 @@ Abc2midi: new feature. Introduced a new option (-TT)  to tune the key of
 A above or below 440.0 Hz but less than a semitone. The output MIDI
 file will re-tune to that frequency. The purpose of this feature
 is to accommodate some instruments like the accordian which are
-not tune exactly to 440.0 Hz.
+not tuned exactly to 440.0 Hz.
 
 Implementation: in store.c introduced two new globals
 retuning and bend which will be shared with genmidi.c.
@@ -9408,4 +9408,138 @@ no longer valid.
 
 Fix: created a new function fix_part_start() in store.c which
 is called after expand_ornaments() in finishfile().
+
+
+Jan 27 2013
+
+Abc2midi: the abc2midi allows but does not recommend the tempo
+command to just specify a number. eg. Q:320. abc2midi automatically
+assumes that this number refers to a quarter note; however,
+the abc standard 2.0 specifies that it should refer to the unit length
+specified by the L: command prior to the body.
+
+Fix: in parseabc.c changed a=1 to a=0 in the function parse_tempo().
+The existing code in tempunits() in store.c does all the rest.
+
+Jan 28 2013
+
+Abc2midi: the above change was withdrawn since there is disagreement
+between abc standard 1.7.6 and abc standard 2.0.
+
+February 25 2013
+
+Abcmatch: introduced -wpitch_hist runtime parameter for computing
+the pitch histogram weighted by the note length. Some minor clean-up
+of the output.
+
+February 26 2013
+
+Abcmatch: negative array index fixed in abcmatch.c (compute_note_histogram).
+Problem is exposed on Windows operating system.
+
+
+March 08 2013 -- patch submitted by Philippe De Muyter
+
+Abc2abc: the -V and -P options have been generalized so that more
+than one voice can be selected using a comma separated list.
+
+Implementation:
+
+The long global variable selected_voices represents the selected
+voice in a bit map. Each bit in the word corresponds to a specific
+voice number. Two new functions are introduced. parse_voices_selection
+parses the voices_string in the -P or -V command and converts it
+into the bitmap in the selected_voices variable. must_emit_voice(n)
+examines the n'th bit of the selected_voices and indicates whether
+it is on or off. The other change is the replacement of the control
+
+-  if ((selected_voice != -1) && (n != selected_voice)) {
+with
++  if (!must_emit_voice(n)) { /* [PHDM] 2013-03-08 */
+
+
+
+
+March 10 2013 -- also submitted by Philippe De Muyter
+
+abc2abc: fix chord's tuple length calculation
+
+Up to now, bar length was increased at first note of chord, and
+tuple status was lost at first note of last chord.  When a chord
+in a tuple had a length modifier, the resulting bar length
+was wrong, which caused wrong error messages.
+
+With
+        X:1
+        T:wrongbarlengtherror
+        M:4/4
+        L:1/8
+        K:C
+        z8 | z6 (3  [fd]/ [fd]3/ [fd] | z6 (3 [f/d/] [f3/d3/] [fd] |
+abc2abc gave a wrong message :
+        %Error : Bar 1 is 13/12 not 4/4
+
+Fix that, by incrementing bar length and decrementing `tuplenotes' at
+chordoff time, not at first chord note.
+Move also the tuple-implied length conversion in `addunits', to
+avoid code duplication.
+Because there are two ways to specify a chord length,
+        [c2e2g2]
+and        [ceg]2
+in the first case, we must now memorize the note length to be able
+to retrieve it at chordoff time; this is done in the new
+`chordfactor' variable.
+
+Additionnaly, as 'addunits' is only called when we know the exact length
+of a note or chord, `repudiate_lastaddunits' is now useless and removed.
+
+
+
+March 14 2013
+
+Abc2midi: part/repeat bug. In the following example
+
+X:1
+T: Part - repeat bug
+Q:1/2=120
+M:2/2
+L:1/4
+K:D
+%%vskip 0
+P:Intro
+|: "Em"e4 ||
+P:A
+|| "D"d4 :|
+
+abc2midi returns the following messages:
+Error in line 12 :  found another |: after a |:
+Warning in line 12 : Assuming repeat
+Warning in line 12 : replacing with double repeat (::)
+writing MIDI file temp21.mid
+
+Furthermore, the e4 in the Intro is repeated and then the D4
+in part A is repeated. Since the P: are only labels here
+(there is no P: command preceding K:), it was expected that
+the entire the tune would be played as
+|: "Em" e4 | "D" d4 :|
+
+Analysis: the function scan_for_missing_repeats() which was
+introduced in June 23 2009 is the source of the problem. The
+function assumes that the tune is actually in two parts and
+inserts a |: in the beginning of part A. When fixreps() is
+called it discovers that two |: occur without an
+intervening :|, so it decides to replace the second |: with
+a double repeat ::. (Note that fixreps() would not be called
+if the parts were real and not just annotations.)
+ 
+Fix:
+The useless conditional statement
+if (J == PART || j == VOICE || j == BAR_REP etc.
+was commented out since it does nothing.
+In the following statement, an additional check parts != -1
+was added. If parts == -1, this implies that the part indications
+are merely annotations and do imply a real part as abc2midi is
+concerned. Therefore bar_rep_found[] and voicestart[] are not
+cleared again, implying that a |: may need to be introduced at
+the beginning of the part if the part ends with a :|.
 

@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.02 Dec 25 2012"
+#define VERSION "3.03 March 14 2013"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -4943,9 +4943,11 @@ voicenum = 0;
 clear_voice_repeat_arrays(); /* [SS] 2012-03-22 */
 for (i=0;i<notes;i++) {
   j = feature[i];
-  if (j == PART || j == VOICE || j == BAR_REP || j == REP_BAR
-     || j == DOUBLE_REP) 
-  if (j == PART) {clear_voice_repeat_arrays();
+  /*if (j == PART || j == VOICE || j == BAR_REP || j == REP_BAR
+     || j == DOUBLE_REP) [SS] 2013-03-14 */
+  /* if (j == PART) [SS] 2013-03-14 */
+  if (j == PART && parts != -1) /* [SS] 2013-03-14 */
+                 {clear_voice_repeat_arrays();
                   part = (char) pitch[i];
                   voicestart[0] = i;
                  }

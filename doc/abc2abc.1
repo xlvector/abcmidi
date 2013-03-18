@@ -77,11 +77,11 @@ command is doubled (e.g. L:1/8 to L:1/4).
 .B \-ver
 Prints version number and exits.
 .TP
-.BI \-V " X"
-For multivoiced abc files (i.e. contains V: field commands), only voice \fIX\fP is copied.
+.BI \-V " X[,Y...]"
+For multivoiced abc files (i.e. contains V: field commands), only voices \fIX[,Y,...]\fP are copied.
 .TP
-.BI \-P " X"
-For multivoiced abc files (i.e. contains V: field commands), all voices except \fIX\fP remain the same. Voice X is modified according the other runtime parameters. 
+.BI \-P " X,[,Y...]"
+For multivoiced abc files (i.e. contains V: field commands), all voices except \fIX[,Y...]\fP remain the same. Voices X,Y... are modified according the other runtime parameters. 
 .TP
 .BI \-X " n"
 For a file containing many tunes, the X: reference numbers are renumbered sequentially
