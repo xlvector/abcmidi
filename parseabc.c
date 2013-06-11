@@ -1296,12 +1296,16 @@ char* out;
       count = count + 1;
       q = q + 1;
       digits = digits + 1;
+      /* [SS] 2013-04-21 */
+      if (count > 50) {event_error ("malformed repeat"); break;}
     } else {
       if (((*q == '-')||(*q == ','))&&(digits > 0)&&(isdigit(*(q+1)))) {
         out[count] = *q;
         count = count + 1;
         q = q + 1;
         digits = 0;
+      /* [SS] 2013-04-21 */
+        if (count > 50) {event_error ("malformed repeat"); break;}
       } else {
         done = 1;
       };
@@ -2149,8 +2153,20 @@ char* line;
       };
       if ((*(q+1) == ':') || (*(q+1) == '|')) {
         event_warning("potentially ambiguous line");
-      };
-      parsefield(*p, q+1);
+/*    [SS] 2013-03-20 */
+/*     };             */
+/*      parsefield(*p,q+1); */
+
+/*    [SS} 2013-03-20 start */
+/*    malformed field command try processing it as a music line */
+        if (inbody) {
+          if (parsing) parsemusic(p);
+        } else {
+          if (parsing) event_text(p);
+        };
+      } else parsefield(*p, q+1); /* not field command malformed */
+/*    [SS] 2013-03-20  end */
+
     } else {
       if (inbody) {
         if (parsing) parsemusic(p);

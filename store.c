@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.03 March 14 2013"
+#define VERSION "3.10 June 07 2013"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -299,6 +299,8 @@ int header_time_num,header_time_denom;
 
 int dummydecorator[DECSIZE]; /* used in event_chord */
 extern char* featname[];
+
+char *csmfilename = NULL;  /* [SS] 2013-04-10 */
 
 void addfract(int *xnum, int *xdenom, int a, int b);
 static void zerobar();
@@ -797,6 +799,7 @@ char **filename;
     printf("        -BF Barfly mode: invokes a stress model if possible\n");
     printf("        -OCC old chord convention (eg. +CE+)\n");
     printf("        -TT tune to A =  <frequency>\n");
+    printf("        -CSM <filename> load custom stress models from file\n");
     printf(" The default action is to write a MIDI file for each abc tune\n");
     printf(" with the filename <stem>N.mid, where <stem> is the filestem\n");
     printf(" of the abc file and N is the tune reference number. If the -o\n");
@@ -867,7 +870,22 @@ outbase = addstring(argv[1]); /* [RM] 2010-11-21 */
     } else {
       event_error("No filename given, ignoring -o option");
     };
-  };
+  }
+
+/* [SS] 2013-04-10 */
+  j = getarg("-CSM", argc, argv);
+  if (j != -1) {
+    if (argc >= j+1) {
+      csmfilename = addstring(argv[j]);
+      if (*csmfilename == '-') {
+        event_error("csmfilename confused with options");
+        csmfilename = NULL;
+       }
+  } else {
+     event_error("Filename required after -CSM option");
+     } 
+ }
+
   ratio_standard = getarg("-RS", argc, argv);
   quiet  = getarg("-quiet", argc, argv);
   dotune = 0;
@@ -2617,7 +2635,8 @@ static void lenmul(n, a, b)
 int n, a, b;
 {
   if ((feature[n] == NOTE) || (feature[n] == REST) || 
-      (feature[n] == CHORDOFF)) {
+      (feature[n] == CHORDOFF)
+       || (feature[n] == CHORDOFFEX)) /* [SS] 2013-04-20 */ {
     num[n] = num[n] * a;
     denom[n] = denom[n] * b;
     reduce(&num[n], &denom[n]);
@@ -2832,11 +2851,12 @@ void event_chordoff(int chord_n, int chord_m)
         tnote_num   = c_n;
         tnote_denom = c_m;
     } else {
-       if (tnote_num * c_m != c_n * tnote_denom) {
+    /*   if (tnote_num * c_m != c_n * tnote_denom) {
           if (!specialtuple) {
             event_warning("Different length notes in tuple for chord");
            };
         };
+      [SS] 2013-04-24 */
      }
      if ((!gracenotes) && (!v->inchord)) {
         tuplecount = tuplecount - 1;
@@ -3449,6 +3469,9 @@ int xoctave, n, m;
   if ((decorators[ROLL]) || (decorators[ORNAMENT]) || (decorators[TRILL])) {
     if (v->inchord) {
       event_error("Rolls and trills not supported in chords");
+      pitchline[notes] = pitch_noacc; /* [SS] 2013-03-26 */
+      bentpitch[notes] = active_pitchbend; /* [SS] 2013-03-26 */
+      addfeature(NOTE, pitch, num*4, denom*2*(v->default_length)); /* [SS] */
     } else {
       if (easyabcmode) /* [SS] 2011-07-18 */ 
          addfeature(META,0,lineno,lineposition); /* [SS] 2011-07-18 */
@@ -5231,8 +5254,9 @@ char *argv[];
 
   for (i=0;i<DECSIZE;i++) decorators_passback[i]=0;
   for (i=0;i<64;i++) dependent_voice[i]=0;
-
   event_init(argc, argv, &filename);
+  /* [SS] 2013-04-10 */
+  if (csmfilename != NULL) read_custom_stress_file(csmfilename);
   if (argc < 2) {
     /* printf("argc = %d\n", argc); */
   } else {

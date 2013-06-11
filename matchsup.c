@@ -99,6 +99,7 @@ extern void reduce();
 #define INITWORDS 20
 #define MAXCHANS 16
 
+
 /*#define DEBUG*/
 
 
@@ -207,6 +208,8 @@ int maxwords = INITWORDS;
 int xrefno;
 
 extern int intune; /* signals to parsetune that tune is finished */
+extern char titlename[48]; /* stores title of tune */
+extern char keysignature[16];
 
 /* Many of these functions have been retained in order to link with parseabc.
 As I have been forced to also modifiy parseabc, now called abcparse, these
@@ -231,7 +234,7 @@ char *featname[] = {
 "INSTRUCTION", "NOBEAM", "CHORDNOTE", "CLEF",
 "PRINTLINE", "NEWPAGE", "LEFT_TEXT", "CENTRE_TEXT",
 "VSKIP", "COPYRIGHT", "COMPOSER", "ARPEGGIO",
-"SPLITVOICE"
+"SPLITVOICE", "META", "PEDAL_ON", "PEDAL_OFF", "EFFECT"
 };
 
 
@@ -632,6 +635,9 @@ char *f;
         };
 ********/
       };
+      break;
+    case 'T':
+      strncpy(titlename,f,46);
       break;
     default:
       {
@@ -1663,7 +1669,7 @@ static void tiefix()
       j = j + 1;
       break;
     case TIE:
-      dotie(j, inchord,voiceno);
+      /*dotie(j, inchord,voiceno); [SS] 2013-04-04 */
       j = j + 1;
       break;
     case LINENUM:
@@ -1827,6 +1833,7 @@ int explict;
 char* clefname;
 {
   int minor;
+  strncpy(keysignature,s,16);
   if (modeindex >0 && modeindex <4) minor = 1;
   if ((dotune) && gotkey) {
     if (pastheader) {
@@ -1928,19 +1935,18 @@ int n;
     finishfile();
     parseroff();
     dotune = 0;
+    intune = 0; /* [SS] 2013-03-20 */
   };
   if (verbose) {
     printf("Reference X: %d\n", n);
   };
   if ((n == xmatch) || (xmatch == 0) || (xmatch == -1)) {
-    if (xmatch == -1) {
-      xmatch = -2;
-    };
     parseron();
     dotune = 1;
     pastheader = 0;
     xrefno = n;
     startfile();
+    return;
   };
 }
 
@@ -1967,3 +1973,18 @@ void free_feature_representation ()
   free(feature);
   free(words);
 }
+
+
+
+void dumpfeat (int from, int to)
+{
+int i,j;
+for (i=from;i<=to;i++)
+  {
+  j = feature[i];
+  if (j<0 || j>73) printf("illegal feature[%d] = %d\n",i,j); /* [SS] 2012-11-25 */
+  else printf("%d %s   %d %d %d %d %d \n",i,featname[j],pitch[i],num[i],denom[i]);
+  }
+}
+
+

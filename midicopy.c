@@ -39,7 +39,7 @@
 
 
 
-#define VERSION "1.10 September 22 2006"
+#define VERSION "1.11 2013-May-10"
 #include "midicopy.h"
 #define NULLFUNC 0
 #define NULL 0
@@ -1325,6 +1325,8 @@ void WriteVarLen(value)
 long value;
 {
     long buffer;
+
+    if (value < 0) value = 0; /* [SS] 2013-05-10 */
 
     buffer = value & 0x7f;
     while ((value >>= 7) > 0) {

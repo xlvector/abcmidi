@@ -1761,7 +1761,8 @@ float val,a0,a1;
 inx0 = segposnum/segposden;
 if (inx0 > nseg) {
    *val_num = *val_num + (int) (float) 1000.0*fdursum[nseg];
-    inx0 = inx0 - nseg;
+    /*inx0 = inx0 - nseg;  [SS] 2013-06-07*/
+    inx0 = inx0 % nseg;  /* [SS] 2013-06-07 */
    }
 inx1 = inx0+1;
 remainder = segposnum % segposden;

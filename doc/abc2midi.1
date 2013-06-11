@@ -2,7 +2,7 @@
 .SH NAME
 \fBabc2midi\fP \- converts abc file to MIDI file(s)
 .SH SYNOPSIS
-abc2midi \fIinfile\fP [\fIrefnum\fP] [-c] [-v] [-ver] [-t] [-n limit] [-RS] [-quiet] [-Q tempo] [-NFNP] [-NFER] [-NGRA] [-STFW] [-OCC] [-NCOM] [-HARP] [-BF] [-TT] [-o outfile]
+abc2midi \fIinfile\fP [\fIrefnum\fP] [-c] [-v] [-ver] [-t] [-n limit] [-RS] [-quiet] [-Q tempo] [-NFNP] [-NFER] [-NGRA] [-STFW] [-OCC] [-NCOM] [-HARP] [-BF] [-TT] [-o outfile] -CSM [filename]
 .SH DESCRIPTION
  The default action is to write a MIDI file for each abc tune
  with the filename <stem>N.mid, where <stem> is the filestem
@@ -69,6 +69,9 @@ Changes the tuning from A = 440 Hz.
 .TP
 .B -o \fIoutfile\fP
 write output to \fIoutfile\fP
+.TP
+.B -CSM \fIinfile\fP
+load a set of custom stress modes from a file
 .SH FEATURES
 .PP
 * Broken rhythms (>, <), chords, n-tuples, slurring, ties, staccatto notes,

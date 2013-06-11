@@ -9543,3 +9543,279 @@ concerned. Therefore bar_rep_found[] and voicestart[] are not
 cleared again, implying that a |: may need to be introduced at
 the beginning of the part if the part ends with a :|.
 
+
+
+
+March 20 2013
+
+Abc2midi: invisible and visible multirest confusion with field commands.
+Z and X are used both as field declarations (X: reference number
+and Z: transcription source) and as multirests in the body. In unusual
+cases where the multirest is followed by a repeat sign and happens
+to be at the beginning of a line, it can cause confusion. For example,
+
+
+X:1
+T: rests
+M:3/4
+K:C
+c6|e6|^g6|\
+X ::\
+C6|e'6|^G6|\
+Z :|\
+[CE^G]6|]
+
+
+X:2
+T:rests
+M:3/4
+K:C
+c6|e6|^g6|\
+X1::\
+C6|e'6|^G6|\
+Z1:|\
+[CE^G]6|]
+
+are two examples which abc2midi fails to interpret correctly. parseline()
+in parseabc.c attempts to treat X :: and Z :| as field commands even
+though they are malformed. Abc2abc also does not produce correct output.
+
+Fortunately parseline issues warnings
+
+Warning in line 8 : whitespace in field declaration
+Warning in line 8 : potentially ambiguous line
+Error in line 8 : Missing Number
+
+and the transcriber is urged to reformat the line to avoid this problem.
+
+Fix: I am not sure whether I should fix this problem. In any case,
+I have put a small patch in parseline() so that the above examples
+are treated correctly.
+
+
+March 21 2013
+
+abcmatch: several bug fixes and a new feature -pitch_table.
+Given a file containing a collection of tunes eg. Modes.abc,
+abcmatch Modes.abc -pitch_table
+will output the interval weighted pitch histogram for each
+tune. If the output is stored in a separate file, eg. Modes.tab,
+this table could be used for searching for the tune having the
+closest matching pitch histogram (a feature to be introduced
+in runabc).
+
+
+
+March 26 2013
+
+abc2midi bug: if a chord is preceded by a Roll or Trill indication,
+abc2midi fails to encode the chord in the MIDI file.
+
+For example:
+
+
+X:1
+T: chordtrill
+M: 4/4
+L: 1/8
+K:C
+V:1
+%%MIDI program 16
+T[ceg]4 [AEc]4 :|
+V:2
+%%MIDI channel 10
+GA GA GA GA :|
+
+A warning is issued that trills and rolls are not implemented for
+chords, but [ceg]4 is not encoded in the MIDI file.
+
+Fix: in event_note, in store.c added the lines 
+
+      pitchline[notes] = pitch_noacc; /* [SS] 2013-03-26 */
+      bentpitch[notes] = active_pitchbend; /* [SS] 2013-03-26 */
+      addfeature(NOTE, pitch, num*4, denom*2*(v->default_length)); /* [SS] */
+
+following the statement
+     event_error("Rolls and trills not supported in chords");
+
+
+April 10 2013
+
+Abc2midi: new feature. Added a new runtime option -CSM <filename>.
+This option allows one to customize the BarFly stress models by
+providing an external file.
+
+Background: the 32 stress models are presently built-in the source
+code in the file stresspat.c. This has the advantage that executables
+can be distributed without an auxiliary data file containing
+the models. However, the user does not have much leeway to alter
+the models or add additional stress models. The -CSM feature
+addresses this limitation by allowing the user to add more
+models for other rhythm designators (eg lesnoto), and to alter
+one or more of the existing models. There is room to add up to
+16 additional models. The feature requires the user to specify
+a text file which contains these models. 
+
+Description of the external file and how it works is given
+in abcguide.txt and a sample of such a file is given in the
+pt folder (customstress.txt).
+
+Implementation: a new function read_custom_stress_file()
+was introduced in the file stresspat.c. Assuming the file
+conforms exactly with the expected format, the function
+reads all the models provided. For each model, if the rhythm
+designator and meter conflict with one of the existing standard
+models, the function will update the characteristics of that model.
+Otherwise the function will append the model to the current
+list.
+
+
+April 11 2013
+
+Corrected a minor error in init_stresspat() (Tango) in stresspat.c.
+As a convenience, I have produced default_stress.txt in the format
+that read_custom_stress_file() accepts. Default_stress.txt contains
+the built in models to abc2midi. You can find the file in the pt (Phil
+Taylor) folder.
+
+
+April 17 2013
+
+Abcmatch: numerous bugs fixed. Introduced a new matching -norhythm.
+The matching algorithm ignores the length of the notes and only
+matches the sequence of pitches in a bar. The file abcmatch.txt
+was updated. More internal documentation was added in abcmatch.c
+
+
+April 20 2013
+
+Abc2midi bug: combination of chords and broken rhythm. In the
+following example,
+
+X:1
+T: broken rhythms
+M: 2/4
+L: 1/8
+K: F
+[DF]2 > [CE]2|
+
+The second chord [CE]2 begins before the end of chord [DF]2.
+
+Analysis: the function brokenadjust() (store.c)  is called
+to adjust the lengths of the notes to effect the broken rhythm.
+It adjusts the notes inside the chord but fails to adjust the length
+associated with the CHORD (CHORDOFFEX feature). This causes
+timestep() in queues.c to be called too early, causing the
+second chord to start to early.
+
+Fix: in the function lenmul() added another condition,
+  || (feature[n] == CHORDOFFEX)) /* [SS] 2013-04-20 */
+
+
+April 21 2013
+
+Fixed: a potential memory overflow in parsing the repeat string.
+In getrep() (parseabc.c) ensured the array index for playonrep_list
+does not exceed 50.
+
+
+April 24 2013
+
+Suppressed warning in abc2midi. For the following example,
+
+X:1
+T:TEST TUPLES
+M:2/2
+L:1/4
+Q:1/2=80
+K:G
+[F,A,D] (3[df]/[eg]/[^e^g]/ [fa][CF] |
+[F,A,D] (3[d/f/][e/g/][^e/^g/] [fa][CF] |
+
+abc2midi issues the following warnings.
+Warning in line 7 : Different length notes in tuple for chord
+Warning in line 7 : Different length notes in tuple for chord
+Warning in line 7 : Different length notes in tuple for chord
+
+Analysis: the message is issued when closing each of the
+tuple chords in the first line. The length of the note in the
+tuple is stored in the variables tnote_num, tnote_denom when
+the first tuple note is encountered. Unfortunately when
+the chord note duration is applied (here one half), the
+note length no longer matches the stored values tnote_num
+and tnote_denom and a warning is sent. The output midi
+file nevertheless correct.
+
+Fix: abc2midi stores the note length of the tuple in tnote_num,
+and tnote_denom. A chordoff feature can modify the value of a tuple
+note (i.e. chord) if its length is indicated outside the chord (eg.
+[CE]3/2. If the modified chord length does not match the stored value
+tnote_num, tnote_denom set by event_note, a warning is issued.
+It is getting too complicated to keep track of a tuple note
+inside and outside a chord, so I have decided to just suppress
+the error message for tuples of chords. (i.e. I would have to
+make extensive changes to the logic of the program to get it working
+properly.)
+
+
+
+May 07 2013
+
+Abcmatch: introducing -fixed <n> runtime parameter. It allows
+matching to go across a bar line. See doc/abcmatch.txt for
+more information.
+
+
+May 10 2013
+
+Midicopy: bug in extracting a segment of a MIDI file. When
+the segment starts in the middle of a note playing, it causes
+a loss of synchronization between the tracks.
+
+Analysis: there was an attempt to write a negative MIDI time
+increment when Mf_currcopytime exceeds Mf_currtime.
+
+Fix: set negative values to zero in the function WriteVarLen(value).
+
+
+
+June 06 2013
+
+Abc2midi: potential segmentation error when applying stress model.
+The following tune contains stray text which abc2midi assumes
+to be part of the body of the tune.
+
+X: 157
+T: Cliffs of Moher
+N: page 51
+R: jig
+M: 6/8
+K: Ador
+"Am"eaa bag| (4efaf "G"ged| "Am"c2A BAG| "Em"EFG ABc|\
+"Am"eaa bag| (4efaf "G"ged| "Am"cAA BAG| "Em"EFG "Am"A3 :|
+"Am"efe dBA| efe dBA|  "G"G2d dBA| GAB dBd|\
+"Am"efe dBA| efe dBA|  "G"GAB dBG| "Em"EFG "Am"A3| 
+~e3 dBA|~e3 dBA|"G"~G3 dBA|GAB dBd|\
+"Am"efe dee|cee Bee|"G"EFG BAG|EDB, "Am" A,3|
+This abc file is used to generate the MIDI files and pdf file for volume 2
+of the music collection used by the Ottawa Slow (Celtic) Jam.
+The file is derived from 
+http://www.ceolas.org/pub/tunes/abc.tunes/sessionTunes.abc
+
+When the stray text is processed in the Barfly mode (-BF),
+the array index to the variable fdursum exceeds the allocated
+memory 32 which can cause a segmentation error on some
+systems.
+
+Fix: in the function fdursum_at_segment in genmidi.c, replaced
+inx0 = inx0 - nseg;
+with
+inx0 = inx0 % nseg; /* [SS] 2013-06-07 */
+which is executed if inx0 > nseg.
+
+
+June 09 2013
+
+Abcmatch: in -br mode the program returns both the number of matching
+bars in the tune and template.
+
