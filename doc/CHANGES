@@ -9819,3 +9819,72 @@ June 09 2013
 Abcmatch: in -br mode the program returns both the number of matching
 bars in the tune and template.
 
+
+September 04 2013
+
+Midicopy: new feature. Introduced the run time option -tempo n (beats/min). When
+this option is included all tempo messages in the midi file are
+replaced with the specified value.
+
+Implementation: in metaevent() when a tempo message is encountered,
+if newtempo is greater than zero, write the newtempo value instead
+of the value in the source midifile. The value of newtempo is set
+by the -tempo run time option.
+
+
+September 06 2013
+
+Midicopy: new feature. Introduced the run time option -speed f (multiplier).
+When this option is included all tempo messages in the midi file are
+are multiplied by the factor f where f is a floating point number between
+0.05 and 10.0. This speeds up or slows the music by this factor.
+
+
+September 07 2013
+
+Midicopy: new feature. Introduced the run time option -drumfocus n m
+where n is the pitch code of the selected drum line and m is the velocity
+value to be applied to all other drum lines. The feature, highlights
+the selected drum line by attenuating all other drum lines by playing
+them at level m (m varies from 0 to 127).
+
+Implementation: the velocities of the other drum lines are set to
+m in function chanmessage() prior to sending a 'note on' message.
+
+September 08 2013
+
+Midicopy: fixed function tick_to_seconds so it returns the correct
+time when the tempo is changed by -tempo or -speed.
+
+
+September 10 2013
+
+Midi2abc, midicopy: bug fix. Midi2abc or midicopy may fail for some
+midi files which use the running status. A few midi files attempt
+to save a few bytes by not transmitting the status byte for a channel
+message when status byte has not changed. For clarification, the
+status byte contains the channel message like "note on channel 10".
+The status byte is followed by one or two data bytes specifying the
+particular note it applies to and the velocity value. Since
+data bytes are restricted to 6 bits and status bytes always
+contain a value exceeding 6 bits, it is easy to tell when a status
+byte is missing. The running status, saves a few bytes when
+several notes in a chord are turned on (or off) at the same time.
+The bug occurred when a metatext message is inserted inside
+a running status complex (eg. note on channel 10, metatext, note on
+channel 10). Midi2abc and midicopy abort with the message
+"unexpected byte 0x..".
+
+Analysis: the bug was traced to the code writetrack() in midifile.c
+and also midicopy.c. It is necessary to store the last status byte
+that occurred in the last channel message. Note a metatext message
+is not a channel message. A new local variable, laststatus, was introduced
+in the code.
+
+
+September 15 2013
+
+Midicopy: new feature. Added an option -mutenodrum [level] to mute
+all channels to velocity level if the channel is not 9 (drum channel).
+If level is not provided, it is set to zero.
+

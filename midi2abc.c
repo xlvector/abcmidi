@@ -46,7 +46,7 @@
  * based on public domain 'midifilelib' package.
  */
 
-#define VERSION "2.92 August 04 2008"
+#define VERSION "2.93 September 10 2013"
 #define SPLITCODE
 
 /* Microsoft Visual C++ Version 6.0 or higher */

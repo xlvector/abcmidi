@@ -269,9 +269,11 @@ readtrack()     /* read a track chunk */
   int sysexcontinue = 0;  /* 1 if last message was an unfinished sysex */
   int running = 0;  /* 1 when running status used */
   int status = 0;    /* status value (e.g. 0x90==note-on) */
+  int laststatus;   /* for running status */
   int needed;
   long varinum;
 
+  laststatus = 0;
   if ( readmt("MTrk") == EOF )
     return(0);
 
@@ -291,25 +293,36 @@ readtrack()     /* read a track chunk */
     if ( sysexcontinue && c != 0xf7 )
       mferror("didn't find expected continuation of a sysex");
 
+/* if bit 7 not set, there is no status byte following the
+*  delta time, so it must a running status and we assume the
+*  last status occuring in the preceding channel message.   */
     if ( (c & 0x80) == 0 ) {   /* running status? */
       if ( status == 0 )
         mferror("unexpected running status");
       running = 1;
     }
-    else {
-      status = c;
-      running = 0;
+    else { /* [SS] 2013-09-10 */
+      if (c>>4 != 0x0f) { /* if it is not a meta event save the status*/
+       laststatus = c;
+        }
+     running = 0;
+     status = c;
     }
 
-    needed = chantype[ (status>>4) & 0xf ];
+    /* [SS] 2013-09-10 */
+    if (running) needed = chantype[ (laststatus>>4) & 0xf];
+    else needed = chantype[ (status>>4) & 0xf ];
 
     if ( needed ) {    /* ie. is it a channel message? */
 
-      if ( running )
+      if ( running ) {
         c1 = c;
-      else
+        chanmessage( laststatus, c1, (needed>1) ? egetc() : 0 );
+        }
+      else {
         c1 = egetc();
-      chanmessage( status, c1, (needed>1) ? egetc() : 0 );
+        chanmessage( status, c1, (needed>1) ? egetc() : 0 );
+       }
       continue;;
     }
 

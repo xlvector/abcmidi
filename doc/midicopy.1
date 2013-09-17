@@ -6,7 +6,8 @@ midicopy \- Copy selected track, channel, time interval of a MIDI file to anothe
     [\fB-from\fP \fIn (in midi ticks)\fP] [\fB-to\fP \fIn (in midi ticks)\fP]\
     [\fB-fromsec %f\fP \fIn (in seconds)\fP] [\fB-tosec\fP \fIn (in seconds)\fP]\
     [\fB-frombeat %f\fP \fIn (in beats)\fP] [\fB-tosec\fP \fIn (in beats)\fP]\
-    [\fB-replace\fP \fItrk,loc,val\fP] \fIinput.mid output.mid\fP
+    [\fB-replace\fP \fItrk,loc,val\fP] [\fB-tempo %n\fP] [\fB-speed %f\fP]\
+    [\fB-drumfocus\fP \fIn \fIm\fP] [\fB -mutenodrum [%d]\fP] \fIinput.mid output.mid\fP
 .SH "DESCRIPTION"
 .PP
 .B midicopy
@@ -71,6 +72,26 @@ byte is located in the specified track (trk) and specified position
 MIDI program number (instrument) associated with a channel.
 You need to know the byte count in the track of that parameter
 in order to use this function,
+.TP
+.B -tempo quarter notes/minute
+All tempo indications in the midi file will be replaced with
+the above value.
+.TP
+.B -speed factor
+All tempo indications in the midi file will be multiplied with
+this factor. Values greater than 1.0 will speed up the music while
+lower values slow the music. The factor is a floating point value.
+.TP
+.B -drumfocus drum-code excluded_drum_velocities
+The selected drum line (specified by the drum-code pitch value) is
+highlighted by reducing the loudness of all other drum lines to
+the excluded_drum_velocities value. The drum-code value must
+be in the range of 35 to 81 inclusive.
+.TP
+.B -mutenodrum [level]
+All channels which are not 9 (drum channel) are attenuated to the
+given level. If level is not specified, it is assumed to be zero.
+
 .SH EXAMPLE
 .B midicopy.exe -trks 1,5 -from 2669 -to 8634 uzicko.mid fragment.mid
 Midicopy will copy tracks 1 and 5 starting from midi pulse position
@@ -82,4 +103,4 @@ Midicopy will copy tracks 1 and 5 starting from midi pulse position
 .SH AUTHOR
 This manual page was written by Seymour Shlien.
 .SH VERSION
-This man page describes midicopy version 1.04 from September 19 2005.
+This man page describes midicopy version 1.17 from September 15 2013.
