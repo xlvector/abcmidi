@@ -9888,3 +9888,11 @@ Midicopy: new feature. Added an option -mutenodrum [level] to mute
 all channels to velocity level if the channel is not 9 (drum channel).
 If level is not provided, it is set to zero.
 
+
+Ocotober 1 2013
+
+Midicopy: new feature. Added the option -setdrumloudness n m
+where n is the drum number between 35 and 81 inclusive and m
+is the new velocity between 0 and 127, All instances of the
+selected drum are assigned the given loudness (velocity).
+

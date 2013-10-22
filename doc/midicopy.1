@@ -7,7 +7,9 @@ midicopy \- Copy selected track, channel, time interval of a MIDI file to anothe
     [\fB-fromsec %f\fP \fIn (in seconds)\fP] [\fB-tosec\fP \fIn (in seconds)\fP]\
     [\fB-frombeat %f\fP \fIn (in beats)\fP] [\fB-tosec\fP \fIn (in beats)\fP]\
     [\fB-replace\fP \fItrk,loc,val\fP] [\fB-tempo %n\fP] [\fB-speed %f\fP]\
-    [\fB-drumfocus\fP \fIn \fIm\fP] [\fB -mutenodrum [%d]\fP] \fIinput.mid output.mid\fP
+    [\fB-drumfocus\fP \fIn \fIm\fP] [\fB -mutenodrum [%d]\fP]\
+    [\fB-setdrumloudness\fP \fIn \fIm\fP]\
+ \fIinput.mid output.mid\fP
 .SH "DESCRIPTION"
 .PP
 .B midicopy
@@ -91,6 +93,11 @@ be in the range of 35 to 81 inclusive.
 .B -mutenodrum [level]
 All channels which are not 9 (drum channel) are attenuated to the
 given level. If level is not specified, it is assumed to be zero.
+.TP
+.B -setdrumloudness n m
+where n is between 35 to 81 inclusive and m is the loudness between
+0 and 127. The loudness of all instances of drum n are changed
+to m.
 
 .SH EXAMPLE
 .B midicopy.exe -trks 1,5 -from 2669 -to 8634 uzicko.mid fragment.mid
@@ -103,4 +110,4 @@ Midicopy will copy tracks 1 and 5 starting from midi pulse position
 .SH AUTHOR
 This manual page was written by Seymour Shlien.
 .SH VERSION
-This man page describes midicopy version 1.17 from September 15 2013.
+This man page describes midicopy version 1.18 from October 1 2013.

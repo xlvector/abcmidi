@@ -39,7 +39,7 @@
 
 
 
-#define VERSION "1.17 2013-Sep-15"
+#define VERSION "1.18 2013-Oct-01"
 #include "midicopy.h"
 #define NULLFUNC 0
 #define NULL 0
@@ -93,6 +93,8 @@ int selected_drum = 0;		/* [SS] 2013-09-07 */
 int drumlevel = 0;		/* [SS] 2013-09-07 */
 int nondrumlevel = 0;		/* [SS] 2013-09-15 */
 int mutenodrum = 0;		/* [SS] 2013-09-15 */
+int chosen_drum = 0;		/* [SS] 2013-10-01 */
+int drumvelocity = 0;		/* [SS] 2013-10-01 */
 
 long Mf_numbyteswritten = 0L;
 long readvarinum ();
@@ -969,6 +971,8 @@ chanmessage (int status, int c1, int c2)
 	if (chan != 9 && mutenodrum)
           if (c2 > nondrumlevel) 
 	     c2 = nondrumlevel;	/*[SS] 2013-09-15 */
+        if (chan == 9 && chosen_drum != 0 && c1 == chosen_drum)
+             c2 = drumvelocity; /* [SS] 2013-10-01 */
 	copy_noteon (chan, c1, c2);
 	break;
       case 0xa0:
@@ -1723,6 +1727,7 @@ main (int argc, char *argv[])
       printf ("-speed %%f (between 0.1 and 10.0)\n");	/* [SS] 2013-09-06 */
       printf ("-drumfocus n (35 - 81) m (0 - 127)\n");	/* [SS] 2013-09-07 */
       printf ("-mutenodrum [level] \n");	/* [SS] 2013-09-15 */
+      printf ("-setdrumloudness n (35-81) m (0 -127)\n"); /* [SS] 2013-10-01 */
       exit (1);
     }
 
@@ -1836,12 +1841,12 @@ main (int argc, char *argv[])
   arg = getarg ("-drumfocus", argc, argv);
   if (arg >= 0)
     {
+      verbatim = 0;
       sscanf (argv[arg], "%d", &selected_drum);
       if (selected_drum < 35 || selected_drum > 81)
 	{
 	  printf ("drumfocus selected_drum must be between 35 and 81\n");
 	  selected_drum = 0;
-	  verbatim = 0;
 	}
       sscanf (argv[arg + 1], "%d", &drumlevel);
       if (drumlevel < 0 || drumlevel > 127)
@@ -1859,6 +1864,26 @@ main (int argc, char *argv[])
       mutenodrum = 1;
       verbatim = 0;
       sscanf (argv[arg], "%d", &nondrumlevel);
+    }
+
+/* [SS] 2013-10-01 */
+  arg = getarg ("-setdrumloudness", argc, argv);
+  if (arg >= 0)
+    {
+      verbatim = 0;
+      sscanf (argv[arg], "%d", &chosen_drum);
+      if (chosen_drum < 35 || chosen_drum > 81)
+	{
+	  printf ("setdrumloudness chosen_drum must be between 35 and 81\n");
+	  chosen_drum = 0;
+	}
+      sscanf (argv[arg + 1], "%d", &drumvelocity);
+      if (drumvelocity < 0 || drumvelocity > 127)
+	{
+	  printf
+	    ("setdrumloudness drumvelocity (2nd arg) must be between 0 and 127\n");
+	  drumvelocity = 90;
+	}
     }
 
 
