@@ -536,28 +536,30 @@ int pass;
   };
 }
 
-static void save_state(vec, a, b, c, d, e)
+static void save_state(vec, a, b, c, d, e, f)
 /* save status when we go into a repeat */
-int vec[5];
-int a, b, c, d, e;
+int vec[6];
+int a, b, c, d, e, f;
 {
   vec[0] = a;
   vec[1] = b;
   vec[2] = c;
   vec[3] = d;
   vec[4] = e;
+  vec[5] = f; /* [SS] 2013-11-02 */
 }
 
-static void restore_state(vec, a, b, c, d, e)
+static void restore_state(vec, a, b, c, d, e, f)
 /* restore status when we loop back to do second repeat */
-int vec[5];
-int *a, *b, *c, *d, *e;
+int vec[6];
+int *a, *b, *c, *d, *e, *f;
 {
   *a = vec[0];
   *b = vec[1];
   *c = vec[2];
   *d = vec[3];
   *e = vec[4];
+  *f = vec[5]; /* [SS] 2013-11-02 */
 }
 
 static int findchannel()
@@ -1563,6 +1565,7 @@ static void noteon(n)
 int n;
 {
   int  vel;
+  vel = 0; /* [SS] 2013-11-04 */
   if (beatmodel != 0)  /* [SS] 2011-08-17 */
      stress_factors (n,   &vel);
   else note_beat(n,&vel);
@@ -2569,7 +2572,7 @@ int xtrack;
   int expect_repeat;
   int slurring;
   int was_slurring; /* [SS] 2011-11-30 */
-  int state[5];
+  int state[6]; /* [SS] 2013-11-02 */
   int texton;
   int timekey;
   int note_num,note_denom;
@@ -2708,7 +2711,7 @@ int xtrack;
   err_num = 0;
   err_denom = 1;
   pass = 1;
-  save_state(state, j, barno, div_factor, transpose, channel);
+  save_state(state, j, barno, div_factor, transpose, channel, lineno);
   slurring = 0;
   was_slurring = 0; /* [SS] 2011-11-30 */
   expect_repeat = 0;
@@ -2896,7 +2899,7 @@ int xtrack;
       if ((pass==1)&&(expect_repeat)) {
         event_error("Expected end repeat not found at |:");
       };
-      save_state(state, j, barno, div_factor, transpose, channel);
+      save_state(state, j, barno, div_factor, transpose, channel, lineno);
       expect_repeat = 1;
       pass = 1;
       maxpass=2;
@@ -2914,7 +2917,7 @@ int xtrack;
           } else {
           /*  pass = 2;  [SS] 2004-10-14 */
             pass++;   /* we may have multiple repeats */
-            restore_state(state, &j, &barno, &div_factor, &transpose, &channel);
+            restore_state(state, &j, &barno, &div_factor, &transpose, &channel, &lineno);
             slurring = 0;
             was_slurring = 0;
             expect_repeat = 0;
@@ -2932,7 +2935,7 @@ int xtrack;
               {
               expect_repeat = 0;
               pass++;   /* we may have multiple repeats */
-              restore_state(state, &j, &barno, &div_factor, &transpose, &channel);
+              restore_state(state, &j, &barno, &div_factor, &transpose, &channel, &lineno);
               slurring = 0;
               was_slurring = 0;
               }
@@ -3006,7 +3009,7 @@ int xtrack;
         /* Already gone through last time. Process it as a |:*/
         /* and continue on.                                  */
         expect_repeat = 1;
-        save_state(state, j, barno, div_factor, transpose, channel);
+        save_state(state, j, barno, div_factor, transpose, channel, lineno);
         pass = 1;
         maxpass=2;
       } else {
@@ -3016,11 +3019,11 @@ int xtrack;
             /* section.                                           */
             event_error("Found unexpected ::");
             expect_repeat = 1;
-            save_state(state, j, barno, div_factor, transpose, channel);
+            save_state(state, j, barno, div_factor, transpose, channel, lineno);
             pass = 1;
           } else {
             /* go back and do the repeat */
-            restore_state(state, &j, &barno, &div_factor, &transpose, &channel);
+            restore_state(state, &j, &barno, &div_factor, &transpose, &channel, &lineno);
             slurring = 0;
             was_slurring = 0;
             /*pass = 2;  [SS] 2004-10-14*/

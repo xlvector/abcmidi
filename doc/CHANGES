@@ -9896,3 +9896,161 @@ where n is the drum number between 35 and 81 inclusive and m
 is the new velocity between 0 and 127, All instances of the
 selected drum are assigned the given loudness (velocity).
 
+October 15 2013
+Abcmatch: new feature. Added options -interval_hist and
+-interval_table to analyze the pitch intervals between
+adjacent notes. The program produces a histogram of the
+note intervals in MIDI (semitone) units.
+
+
+October 22 2013
+Abcmatch: new feature. Added the option to accept
+a certain number of insertion, deletion, and substitution
+errors using the Levenshtein distance measure.
+
+
+October 28 2013
+Midicopy: new feature: added the option to list the tracks
+to exclude from copying. eg. -xtrks 4,5 indicates to copy
+all tracks except 4 and 5.
+
+
+October 30 2013
+Abc2midi: bug fix. A key change in the middle of a tune does
+not propagate to the split voice. In the following example,
+
+
+X:1
+T:Test
+L:1/4
+M:2/2
+Q:1/2=110
+K:C
+V:1
+C4 | [K:Bb]B4 & B,4 |
+
+B,4 was not flattened.
+
+Analysis: the key change [K;Bb] was not propagated to the split
+voice. 
+
+Fix: in event_split_voice() in store.c, the active basemap and basemul
+arrays for the voice was saved in a temporary area and transferred
+to the split voice. 
+
+
+October 31 2013
+
+abc2midi and yaps bug: for the following example,
+
+X:1
+T: :|] ending
+M:C
+N:Portland p.19
+R:march
+K:D
+|:"G" b2a2 "A"g2e2| "D"d4 d4 :|]
+
+abc2midi returns the error
+Error in line 10 : Chord already finished
+and
+yaps returns the error
+Error in line 7: no chord to close
+
+Analysis: these are extraneous error messages. Parsemusic() in
+parseabc.c detects the THIN_THICK bar line |] but does not
+detect it when it is preceded with ':'.
+Fix: check for ']' in this case and skip over.
+
+
+November 02 2013
+
+Abc2midi: some instructions which are meaningful to abcm2ps are
+meaningless to abc2midi and cause a warning. In the following
+example, abc2midi cannot interpret !4! and !0!. 
+
+X:1
+T: instructions
+M: 4/4
+L: 1/8
+K: A
+"E"FEF(G "A" A2) !4!!0! [A2A2]|
+
+Warning in line 6 : instruction !4! ignored
+Warning in line 6 : instruction !0! ignored
+
+Analysis: event_handle_instructions(s) in store.c issues this
+warning when it cannot interpret this message.
+
+Fix: the message is suppressed if -quiet is included in
+the runtime parameters.
+
+
+
+November 2 2013
+
+abc2midi indicates the wrong line number in a warning. In
+the following example,
+
+X:1
+T: Slurs
+M: 2/4
+L: 1/8
+K: F
+z(GFE
+|:DE) FG|
+AB (3cBA:|
+
+abc2midi returns the message
+Error in line 8 : Unexpected end of slur found
+
+The end of slur is actually in line 7.
+
+Analysis: on the second repeat, no slur was started so an end of
+slur is not expected - but the line number in the error message
+is wrong. The repeat :| causes writetrack (in genmidi.c) to backtrack
+it restores the state variables to the condition where the opening
+repeat sign |: occurs but the state variables do not include the
+line number used by the warning or error message.
+
+Fix: expanded the functions save_state() and restore_state() so
+that the line number can also be saved.
+
+
+November 4 2013
+
+abc2midi bug: A bug was detected when abc2midi is run with the Barfly
+stress model (-BF 1). For the following file t.abc
+
+X: 1
+T: Barfly implementation bug
+R: jig
+M: 6/8
+L: 1/8
+K: G
+  |:  "C"c3 "G/B"B3 | "D7/A"AGF "G"GBd :|
+
+abc2midi t.abc -BF 1
+the note c3 or B3 may be inaudible in some instances.
+
+Analysis: the local variable vel in the function noteon() may end
+up being undefined. In certain cases stress_factors() called
+by noteon() may not set the variable vel, in which case
+we expect note_beat() to be called. Unfortunately, if vel
+was initally nonzero note_beat is note called and vel
+has a random value.
+
+Fix: initialize vel to 0 in noteon().
+
+
+yaps fix: On January 16 2006 an option to display the notes in
+red was introduced. This code did not work well because the
+other musical components were also colored red. The problem
+was fixed by maintaining the color in black and temporarily
+switching the color to red when a note, beam or rest is
+drawn. A new variable redcolor was introduced in drawtune.c
+and set by the !red! command and reset to zero by !black!.
+The functions drawnote(), drawrest, and drawbeam() test this
+variable and switch the color to red on a temporary basis in
+order to draw the object.
+  

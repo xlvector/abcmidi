@@ -88,6 +88,7 @@ int eps_out;
 int titleleft = 0;
 int titlecaps = 0;
 int gchords_above = 1;
+int redcolor; /* [SS] 2013-11-04*/
 
 enum placetype {left, right, centre};
 struct font textfont;
@@ -1168,6 +1169,7 @@ static void drawbeam(struct feature* beamset[], int beamctr, int dograce)
     exit(0);
   };
   fprintf(f, "\n");
+  if (redcolor) fprintf(f,"1.0 0.0 0.0 setrgbcolor\n");
   n = beamset[0]->item;
   stemup = n->stemup;
   beamdir = 2*stemup - 1;
@@ -1231,6 +1233,7 @@ static void drawbeam(struct feature* beamset[], int beamctr, int dograce)
     d = d - 1;
     offset = offset + TAIL_SEP;
   };
+  if (redcolor) fprintf(f,"0 setgray\n");
 }
 
 static void sizevoice(struct voice* v, struct tune* t)
@@ -2146,6 +2149,7 @@ static void drawnote(struct note* n, double x, struct feature* ft,
 /* draw a note */
 {
   handlebeam(n, ft);
+  if (redcolor) fprintf(f,"1.0 0.0 0.0 setrgbcolor\n");
   drawhead(n, x, ft);
   if (thischord == NULL) {
     if (n->base > 1) {
@@ -2159,8 +2163,9 @@ static void drawnote(struct note* n, double x, struct feature* ft,
   if (n->beaming == single) {
     singletail(n->base, n->base_exp, n->stemup, n->stemlength);
   };
-  notetext(n, tupleno, x, ft, spacing);
   fprintf(f, "\n");
+  if (redcolor) fprintf(f,"0 setgray\n");
+  notetext(n, tupleno, x, ft, spacing);
 }
 
 static void drawrest(struct rest* r, double x, struct vertspacing* spacing)
@@ -2168,6 +2173,7 @@ static void drawrest(struct rest* r, double x, struct vertspacing* spacing)
 {
   int i;
 
+  if (redcolor) fprintf(f,"1.0 0.0 0.0 setrgbcolor\n");
   if (r->multibar > 0) {
     fprintf(f, "(%d) %.1f %d mrest ", r->multibar, x, 4*TONE_HT);
   } else {
@@ -2206,6 +2212,7 @@ static void drawrest(struct rest* r, double x, struct vertspacing* spacing)
     fprintf(f, " %.1f 3.0 dt", (double)(HALF_HEAD+DOT_SPACE*i)); 
   };
   fprintf(f, "\n");
+  if (redcolor) fprintf(f,"0 setgray\n");
   if (r->instructions != NULL) {
     setfontstruct(&partsfont);
     showtext(r->instructions, x, spacing->yinstruct, 
@@ -3225,8 +3232,8 @@ static int printvoiceline(struct voice* v)
       break;
     case DYNAMIC: 
       psaction = ft->item;
-      if(psaction->color == 'r') fprintf(f,"60 0 0 setrgbcolor\n");
-      if(psaction->color == 'b') fprintf(f,"0 setgray\n");
+      if(psaction->color == 'r') redcolor = 1; /* [SS] 2013-11-04 */
+      if(psaction->color == 'b') redcolor = 0;
       break;
     case LINENUM: 
       lineno = (int)(ft->item);
@@ -3464,6 +3471,7 @@ void printtune(struct tune* t)
   struct bbox boundingbox;
   enum placetype titleplace;
 
+  redcolor = 0; /* [SS] 2013-11-04 */
   resettune(t);
   sizetune(t);
   resettune(t);

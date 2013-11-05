@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.10 June 07 2013"
+#define VERSION "3.14 November 04 2013"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -1120,6 +1120,8 @@ int topvoiceno,topindexno;
 int program;
 int octaveshift;
 int default_length; /* [SS] 2010-08-28 */
+int abasemap[7],abasemul[7]; /* active basemap  [SS] 2013-10-30*/
+int i;
 if (!voicesused) insertfeature(VOICE,1,0,0,v1index+1); /* [SS] 2009-12-21 */
 voicesused = 1; /* multivoice file */
 splitno = v->tosplitno;
@@ -1138,10 +1140,27 @@ default_length = v->default_length;
 if (topvoiceno == voiceno) sync_to = search_backwards_for_last_bar_line(notes-1);
 addfeature(SINGLE_BAR,0,0,0);
 
+
 if (splitno == -1) {splitno = 32+numsplits++;
                    v->tosplitno = splitno;
                    }
+/* save basemap and basemul in case it was just changed. We
+   need to send it to the split voice. [SS] 2013-10-30
+*/
+for (i=0;i<7;i++) {
+     abasemap[i] = v->basemap[i];
+     abasemul[i] = v->basemul[i];
+     }
+
 v = getvoicecontext(splitno);
+/* propagate the active basemap to the split voice */
+for (i=0;i<7;i++) {
+     v->basemap[i] = abasemap[i];
+     v->basemul[i] = abasemul[i];
+     }
+copymap(v);
+/* end of [SS] 2013-10-30 patch */
+
 splitdepth++;
 addfeature(VOICE, v->indexno, 0, 0);
 if (v->fromsplitno == -1) {
@@ -3773,7 +3792,7 @@ if (nofnop == 0) {
    done = 1;
   };
 
-  if (done == 0) {
+  if (done == 0 && quiet == -1) {    /* [SS] 2013-11-02 */
     sprintf(buff, "instruction !%s! ignored", s);
     event_warning(buff);
   };

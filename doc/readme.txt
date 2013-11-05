@@ -1,10 +1,10 @@
 abcMIDI :   abc <-> MIDI conversion utilities
 
 midi2abc version 2.93 Sept 10 2013
-abc2midi version 3.10 June 07 2013
+abc2midi version 3.14 November 04 2013
 abc2abc  version 1.74 April 21 2013
-yaps     version 1.54 April 21 2013
-abcmatch version 1.56 June 09 2013
+yaps     version 1.56 November 04 2013
+abcmatch version 1.58 October 22 2013
 midicopy version 1.18 October 01 2013
 
 24th January 2002
@@ -14,7 +14,7 @@ J.R.Allwright@westminster.ac.uk
 University of Westminster,
 London, UK
 
-October 2013
+November 2013
 
 Seymour Shlien
 seymour.shlien@crc.ca

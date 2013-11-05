@@ -1816,6 +1816,7 @@ char* field;
             p = p + 1;
             p = getrep(p, playonrep_list);
             event_bar(REP_BAR, playonrep_list);
+            if (*p == ']') p = p + 1; /* [SS] 2013-10-31 */
             break;
           default:
             event_error("Single colon in bar");
@@ -2120,7 +2121,7 @@ char* line;
 {
   char *p, *q;
 
-/*  printf("%d parsing : %s\n", lineno, line);  */
+  /*printf("%d parsing : %s\n", lineno, line); */ 
   strncpy(inputline,line,sizeof inputline); /* [SS] 2011-06-07 [PHDM] 2012-11-27 */
 
   p = line;

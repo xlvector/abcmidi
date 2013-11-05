@@ -49,7 +49,7 @@ Matching:
 
 
 
-#define VERSION "1.56 June 09 2013"
+#define VERSION "1.58 October 21 2013"
 #include <stdio.h>
 #include <stdlib.h>
 #include "abc.h"
@@ -68,7 +68,9 @@ enum ACTION
   cpitch_histogram,
   cwpitch_histogram,
   clength_histogram,
-  cpitch_histogram_table
+  cpitch_histogram_table,
+  interval_pdf,
+  interval_pdf_table
 } action;
 
 
@@ -128,7 +130,10 @@ int fileindex = -1;
 int wphist, phist, lhist;	/* flags for computing pitch or length histogram */
 int pdftab;			/* flag for computing pitch pdf for each tune */
 int qntflag = 0;		/* flag for turning on contour quantization */
+int wpintv = 0;			/* flag for computing interval pdf */
+int wpipdf  = 0;		/* flag for computing interval pdf for each tune*/
 int norhythm = 0;		/* ignore note lengths */
+int levdist = 0;		/* levenshtein distance */
 
 char *templatefile;
 
@@ -146,6 +151,8 @@ unsigned char tpbarstatus[300];
 int pitch_histogram[128];
 int weighted_pitch_histogram[128];
 int length_histogram[144];
+int interval_histogram[128];
+int lastpitch;
 
 /* compute the midi offset for the key signature. Since
    we do not have negative indices in arrays, sf2midishift[7]
@@ -334,13 +341,16 @@ init_histograms ()
     weighted_pitch_histogram[i] = 0;
   for (i = 0; i < 144; i++)
     length_histogram[i] = 0;
+  for (i = 0; i < 128; i++)
+    interval_histogram[i] = 0;
+  lastpitch = 0;
 }
 
 
 void
 compute_note_histograms ()
 {
-  int i, index;
+  int i, index, delta;
   for (i = 0; i < innotes; i++)
     {
       index = imidipitch[i];
@@ -352,6 +362,11 @@ compute_note_histograms ()
       if (index > 143)
 	index = 143;
       length_histogram[index]++;
+      if (lastpitch != 0) {delta = imidipitch[i] - lastpitch;
+                           delta += 60;
+                           if (delta > -1 && delta < 128) interval_histogram[delta]++;
+                           }
+      lastpitch = imidipitch[i];
     }
 }
 
@@ -387,9 +402,19 @@ print_weighted_pitch_histogram ()
       printf ("%d %d\n", i, weighted_pitch_histogram[i]);
 }
 
+void
+print_interval_pdf()
+{
+  int i;
+  printf ("interval_histogram\n");
+  for (i = 0; i < 128; i++)
+    if (interval_histogram[i] > 0)
+      printf ("%d %d\n", i-60, interval_histogram[i]);
+}
+
 
 void
-make_and_print_pdf ()
+make_and_print_pitch_pdf ()
 {
   float pdf[12], sum;
   int i, j;
@@ -411,6 +436,28 @@ make_and_print_pdf ()
     }
 }
 
+void
+make_and_print_interval_pdf ()
+{
+  float pdf[24], sum;
+  int i, j;
+  for (i = 0; i < 24; i++)
+    pdf[i] = 0.0;
+  sum = 0.0;
+  for (i = 48; i < 72; i++)
+    {
+      j = i-48;
+      pdf[j] = (float) interval_histogram[i];
+      sum += (float) interval_histogram[i];
+    }
+  if (sum <= 0.000001)
+    sum = 1.0;
+  for (i = 0; i < 24; i++)
+    {
+      pdf[i] = pdf[i] / sum;
+      printf ("%d %5.3f\n", i-12, pdf[i]);
+    }
+}
 
 void
 difference_midipitch (int *pitch_samples, int nsamples)
@@ -544,6 +591,36 @@ print_bars (int mbar_number, int ibar_number)
 }
 
 
+
+#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+ 
+int levenshtein(int *s1, int *s2, int s1len, int s2len) {
+    unsigned int  x, y, lastdiag, olddiag;
+    unsigned int column[33];
+    for (y = 1; y <= s1len; y++)
+        column[y] = y;
+    for (x = 1; x <= s2len; x++) {
+        column[0] = x;
+        for (y = 1, lastdiag = x-1; y <= s1len; y++) {
+            olddiag = column[y];
+            column[y] = MIN3(column[y] + 1, column[y-1] + 1, lastdiag + (s1[y-1] == s2[x-1] ? 0 : 1));
+            lastdiag = olddiag;
+        }
+       if (column[x] >= levdist) return levdist;
+    }
+    if (column[s1len] < levdist && s1len/(2*levdist)>= 1) return 0;
+    return(column[s1len]);
+}
+
+int perfect_match (int *s1, int *s2, int s1len) {
+int i;
+for (i=0;i<s1len;i++) {
+  if (s1[i] != s2[i]) return -1;
+  }
+return 0;
+}
+
+
 /* absolute match - matches notes relative to key signature */
 /* It is called if the resolution variable is set to 0.     */
 /* -------------------------------------------------------- */
@@ -555,6 +632,8 @@ match_notes (int mbar_number, int ibar_number, int delta_pitch)
   int ioffset, moffset;
   int tplastnote,lastnote; /* for contour matching */
   int deltapitch,deltapitchtp;
+  int string1[32],string2[32];
+
   ioffset = ibarlineptr[ibar_number];
   moffset = tpbarlineptr[mbar_number];
   /*printf("ioffset = %d moffset = %d\n",ioffset,moffset);*/ 
@@ -580,9 +659,11 @@ match_notes (int mbar_number, int ibar_number, int delta_pitch)
 	  continue;
 	}			/* unknown contour note */
 
-      if (norhythm == 0)
-        if (inotelength[i + ioffset] != tpnotelength[i + moffset])
-  	  return -1;
+
+      if (norhythm == 1) {
+        inotelength[i + ioffset] =  0;
+        tpnotelength[i + moffset] = 0;
+        }
 
       if (con == 1) {
 /* contour matching */
@@ -595,39 +676,35 @@ match_notes (int mbar_number, int ibar_number, int delta_pitch)
 	     deltapitch = quantize7 (deltapitch);
              deltapitchtp = quantize7(deltapitchtp);
              }
-          
-          /*printf("deltapitch = %d deltapitchtp = %d\n",deltapitch,deltapitchtp);*/
-          if (deltapitch != deltapitchtp) 
-            return -1;
-/* match succeeded */
+          string1[notes] = 256*deltapitch + inotelength[i + ioffset];
+          string2[notes] = 256*deltapitchtp + tpnotelength[i + moffset];
+          if (notes < 32) notes++;
+          else printf("notes > 32\n");
+
          /* printf("%d %d\n",deltapitch,deltapitchtp);*/
-          } else { /* first note in bar - no lastnote */
-       tplastnote = tpmidipitch[i+moffset];
-       lastnote = imidipitch[i+ioffset];
-       }
+          }
+       else { /* first note in bar - no lastnote */
+         tplastnote = tpmidipitch[i+moffset];
+         lastnote = imidipitch[i+ioffset];
+         }
      } 
-      else  
+      else  {
 /* absolute matching (with transposition) */
 /*printf("%d %d\n",imidipitch[i+ioffset],tpmidipitch[i+moffset]-delta_pitch);*/
-      if (imidipitch[i + ioffset] != (tpmidipitch[i + moffset] - delta_pitch))
-	return -1;
-
-
-      i++;
-      notes++;
-      }    
+      string1[notes] = 256*imidipitch[i+ioffset] + inotelength[i + ioffset];
+      string2[notes] = 256*(tpmidipitch[i+moffset] - delta_pitch) + tpnotelength[i + moffset];
+      if (notes < 32) notes++;
+      else printf("notes > 32\n");
+      }
+  i++;
+  }    
   if (imidipitch[i + ioffset] != BAR)
     return -1;			/* in case template has fewer notes */
-  if (notes > 2)
-    {
-      return 0;
-    }
-  if (ignore_simple)
+
+  if (notes < 2)
     return -1;
-  if (notes > 2)
-    return 0;
-  else
-    return -1;
+  if (levdist == 0) return perfect_match(string1,string2,notes);
+  else return levenshtein(string1,string2,notes,notes);
 }
 
 
@@ -636,6 +713,7 @@ match_notes (int mbar_number, int ibar_number, int delta_pitch)
 /* this matching algorithm ignores bar lines and tries to match
    a fixed number of notes set by fnotes. It is unnecessary for
    the time signatures in the template and tune to match.   */
+
 int
 fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch)
 {
@@ -643,6 +721,7 @@ fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch
   int ioffset, moffset;
   int tplastnote,lastnote; /* for contour matching */
   int deltapitch,deltapitchtp;
+  int string1[32],string2[32];
   ioffset = ibarlineptr[ibar_number];
   moffset = tpbarlineptr[mbar_number];
   /*printf("ioffset = %d moffset = %d\n",ioffset,moffset);*/ 
@@ -659,8 +738,8 @@ fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch
           j++;
 	  continue;
 	}			/* pass over RESTS or BARS */
-      if (tpmidipitch[i + ioffset] == RESTNOTE
-	  || tpmidipitch[i + ioffset] == BAR)
+      if (tpmidipitch[i + moffset] == RESTNOTE
+	  || tpmidipitch[i + moffset] == BAR)
 	{
 	  i++;
 	  continue;
@@ -674,9 +753,10 @@ fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch
 	  continue;
 	}			/* unknown contour note */
 
-      if (norhythm == 0)
-        if (inotelength[j + ioffset] != tpnotelength[i + moffset])
-  	  return -1;
+      if (norhythm == 1) {
+        inotelength[j + ioffset] =  0;
+        tpnotelength[i + moffset] = 0;
+        }
 
       if (con == 1) {
 /* contour matching */
@@ -689,8 +769,14 @@ fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch
 	     deltapitch = quantize7 (deltapitch);
              deltapitchtp = quantize7(deltapitchtp);
              }
+          string1[notes] = 256*deltapitch + inotelength[j + ioffset];
+          string2[notes] = 256*deltapitchtp + tpnotelength[i + moffset];
+          if (notes < 32) notes++;
+          else printf("notes > 32\n");
           
-          /*printf("deltapitch = %d deltapitchtp = %d\n",deltapitch,deltapitchtp);*/
+          /* printf("deltapitch  %d %d\n",deltapitch,deltapitchtp);
+             printf("length %d %d\n",inotelength[j + ioffset],tpnotelength[i+moffset]);
+          */
           if (deltapitch != deltapitchtp) 
             return -1;
 /* match succeeded */
@@ -700,27 +786,26 @@ fixed_match_notes (int fnotes, int mbar_number, int ibar_number, int delta_pitch
        lastnote = imidipitch[j+ioffset];
        }
      } 
-      else  
+      else { 
 /* absolute matching (with transposition) */
-/*printf("%d %d\n",imidipitch[i+ioffset],tpmidipitch[i+moffset]-delta_pitch);*/
-      if (imidipitch[j + ioffset] != (tpmidipitch[i + moffset] - delta_pitch))
-	return -1;
+     /*printf("%d %d\n",imidipitch[j+ioffset],tpmidipitch[i+moffset]-delta_pitch);
+       printf("%d %d\n",inotelength[j+ioffset],tpnotelength[i+moffset]);
+     */
+     
+      string1[notes] = 256*imidipitch[j+ioffset] + inotelength[j + ioffset];
+      string2[notes] = 256*(tpmidipitch[i+moffset] - delta_pitch) + tpnotelength[i + moffset];
+      if (notes < 32) notes++;
+      else printf("notes > 32\n");
+      }
 
-
-      i++;
-      j++;
-      notes++;
-      }    
-  if (notes > 2)
-    {
-      return 0;
-    }
-  if (ignore_simple)
+  i++;
+  j++;
+  }
+  if (notes < 2)
     return -1;
-  if (notes > 2)
-    return 0;
-  else
-    return -1;
+  /*printf("ioffset = %d moffset = %d\n",ioffset,moffset);*/
+  if (levdist == 0) return perfect_match(string1,string2,notes);
+  else return levenshtein(string1,string2,notes,notes);
 }
 
 
@@ -738,32 +823,33 @@ print_bar_samples (int mmsamples, int *mmpitch_samples)
 int
 match_samples (int mmsamples, int *mmpitch_samples)
 {
-  int i, dif;
+  int i;
   int changes;
   int last_sample;
+  int string1[32],string2[32];
+  int j;
   if (mmsamples != isamples)
     return -1;
-  dif = 0;
   changes = 0;
   last_sample = ipitch_samples[0];	/* [SS] 2012-02-05 */
+  j = 0;
   for (i = 0; i < mmsamples; i++)
     {
       if (ipitch_samples[i] == -1 || mmpitch_samples[i] == -1)
 	continue;		/* unknown contour note (ie. 1st note) */
-      if (ipitch_samples[i] != mmpitch_samples[i])
-	{
-	  dif++;
-	  break;
-	}
+      string1[j] = ipitch_samples[i];
+      string2[j] = mmpitch_samples[i];
+      j++;
       if (last_sample != ipitch_samples[i])
 	{
 	  last_sample = ipitch_samples[i];
 	  changes++;
 	}
     }
-  if (ignore_simple && changes < 3)
-    return -1;
-  return dif;
+    if (ignore_simple && changes < 3)
+       return -1;
+    if (levdist == 0) return perfect_match(string1,string2,j);
+    else return levenshtein(string1,string2,j,j);
 }
 
 
@@ -801,8 +887,8 @@ match_any_bars (int tpbars, int barnum, int delta_key, int nmatches)
 /* debugging 
           printf("bar %d\n",j);
           print_bar_samples(msamples[j],mpitch_samples+moffset);
-          printf("dif = %d\n\n",dif);
-*/
+          /*printf("dif = %d\n\n",dif);*/
+
 
 
 	  moffset += msamples[j];
@@ -1022,6 +1108,8 @@ for (i=0;i<300;i++)
   if (tpbarstatus[i] > 0) count++;
 return count;
 }  
+
+
 int
 analyze_abc_file (char *filename)
 {
@@ -1051,9 +1139,17 @@ analyze_abc_file (char *filename)
 	{
 	  printf ("%4d %s %s\n%s\n", xrefno, filename, keysignature,
 		  titlename);
-	  make_and_print_pdf ();
+	  make_and_print_pitch_pdf ();
 	  init_histograms ();
 	}
+      if (action == interval_pdf_table)
+	{
+	  printf ("%4d %s %s\n%s\n", xrefno, filename, keysignature,
+		  titlename);
+	  make_and_print_interval_pdf ();
+	  init_histograms ();
+	}
+
     }
   fclose (fp);
   switch (action)
@@ -1066,6 +1162,9 @@ analyze_abc_file (char *filename)
       break;
     case clength_histogram:
       print_length_histogram ();
+      break;
+    case interval_pdf:
+      print_interval_pdf ();
       break;
     }
   return (0);
@@ -1126,6 +1225,15 @@ event_init (argc, argv, filename)
      resolution = 0;
     }
 
+  j = getarg("-lev",argc,argv);
+  if (j != -1) {
+    if (argv[j] == NULL) {
+       printf("'error: expecting a number specifying the maximum levenshtein distance allowed\n");
+       exit(0);
+       }
+       levdist = readnumf(argv[j]);
+    }
+
   j = getarg("-tp",argc,argv);
   if (j != -1) {
     if (argv[j] == NULL) {
@@ -1175,6 +1283,8 @@ event_init (argc, argv, filename)
   phist = getarg ("-pitch_hist", argc, argv);
   lhist = getarg ("-length_hist", argc, argv);
   pdftab = getarg ("-pitch_table", argc, argv);
+  wpintv = getarg ("-interval_hist",argc,argv);
+  wpipdf = getarg ("-interval_table",argc,argv);  
 
   if (phist >= 0)
     {
@@ -1192,6 +1302,14 @@ event_init (argc, argv, filename)
     {
       action = cpitch_histogram_table;
     }
+  if (wpintv >=0)
+   {
+     action = interval_pdf;
+   }
+  if (wpipdf >=0)
+   {
+     action = interval_pdf_table;
+   }
 
   if (brief == 1)
     resolution = 0;		/* do not compute msamples in main() */
@@ -1217,6 +1335,7 @@ event_init (argc, argv, filename)
       printf ("        -fixed <n> fixed number of notes\n");
       printf ("        -con  pitch contour match\n");
       printf ("        -qnt contour quantization\n");
+      printf ("        -lev use levenshtein distance\n");
       printf ("        -ign  ignore simple bars\n");
       printf ("        -a report any matching bars (default all bars)\n");
       printf ("        -br %%d only report number of matched bars when\n\
@@ -1225,8 +1344,10 @@ event_init (argc, argv, filename)
       printf ("        -ver returns version number\n");
       printf ("        -pitch_hist pitch histogram\n");
       printf ("        -wpitch_hist interval weighted pitch histogram\n");
-      printf ("        -length_hist pitch histogram\n");
+      printf ("        -length_hist note duration histogram\n");
+      printf ("        -interval_hist pitch interval histogram\n");
       printf ("        -pitch_table separate pitch pdfs for each tune\n");
+      printf ("        -interval_table separate interval pdfs for each tune\n");
       exit (0);
     }
   else

@@ -39,7 +39,7 @@
 
 
 
-#define VERSION "1.18 2013-Oct-01"
+#define VERSION "1.20 2013-Oct-28"
 #include "midicopy.h"
 #define NULLFUNC 0
 #define NULL 0
@@ -435,9 +435,9 @@ alloc_trackdata ()
 {
   if (trackdata != NULL)
     free (trackdata);
-/* add another 50 percent since running status is not preserved */
-  trackdata = (char *) malloc (Mf_toberead + Mf_toberead / 2);
-  trackdata_size = Mf_toberead + Mf_toberead / 2;
+/* double it since running status is not preserved [SS] 2013-10-08 */
+  trackdata = (char *) malloc (Mf_toberead + Mf_toberead );
+  trackdata_size = Mf_toberead + Mf_toberead ;
   trackdata_length = 0;
   trackdata[0] = 0;
 }
@@ -1676,8 +1676,9 @@ int
 main (int argc, char *argv[])
 {
   int arg;
-  int trk[12], mtrks;
-  int chn[12], chns;
+  int trk[16], mtrks;
+  int chn[16], chns;
+  int xtrks; /* [SS] 2013-10-28 */
   int i;
   int byteloc, trknum;
   int repflag;
@@ -1691,6 +1692,7 @@ main (int argc, char *argv[])
   for (i = 0; i < 16; i++)
     ctocopy[i] = 1;
   mtrks = 0;
+  xtrks = 0;
   chns = 0;
   start_tick = -1;
   end_tick = -1;
@@ -1715,6 +1717,7 @@ main (int argc, char *argv[])
       printf ("options:\n");
       printf ("-ver  version information\n");
       printf ("-trks n1,n2,..(starting from 1)\n");
+      printf ("-xtrks n1,n2, (tracks to exclude)\n"); /* [SS] 2013-10-27 */
       printf ("-chns n1,n2,..(starting from 1)\n");
       printf ("-from n (in midi ticks)\n");
       printf ("-to n   (in midi ticks)\n");
@@ -1750,6 +1753,22 @@ main (int argc, char *argv[])
       for (i = 0; i < mtrks; i++)
 	if (trk[i] < 32 && trk[i] >= 0)
 	  tocopy[trk[i] - 1] = 1;
+    }
+
+  arg = getarg ("-xtrks", argc, argv); /* [SS] 2013-10-27 */
+  if (arg >= 0)
+    xtrks = sscanf (argv[arg], "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+		    &trk[0], &trk[1], &trk[2], &trk[3], &trk[4],
+		    &trk[5], &trk[6], &trk[7], &trk[8], &trk[9], &trk[10],
+		    &trk[11]);
+  if (xtrks > 0)
+    {
+      /* printf("%d tracks specified\n", mtrks); */
+      for (i = 0; i < 32; i++)
+	tocopy[i] = 1;
+      for (i = 0; i < xtrks; i++)
+	if (trk[i] < 32 && trk[i] > 0)
+	  tocopy[trk[i] - 1] = 0;
     }
 
   arg = getarg ("-chns", argc, argv);
@@ -1926,6 +1945,10 @@ main (int argc, char *argv[])
     }
   if (mtrks == 0)
     mtrks = ntrks;
+
+  if (xtrks > 0)
+    mtrks = ntrks - xtrks;
+
   mf_write_header_chunk (format, mtrks, division);
 
   if (repflag >= 0)

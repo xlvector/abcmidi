@@ -2,7 +2,9 @@
 .SH NAME
 midicopy \- Copy selected track, channel, time interval of a MIDI file to another MIDI file
 .SH SYNOPSIS
-\fBmidicopy\fP [\fB-ver\fP] [\fB-trks\fP \fIn1,n2,..\fP] [\fB-chans\fP \fIn1,n2,...\fP]\
+\fBmidicopy\fP [\fB-ver\fP] [\fB-trks\fP \fIn1,n2,..\fP]\
+    [\fB-xtrks\fP \fIn1,n2,..\fP]\
+    [\fB-chans\fP \fIn1,n2,...\fP]\
     [\fB-from\fP \fIn (in midi ticks)\fP] [\fB-to\fP \fIn (in midi ticks)\fP]\
     [\fB-fromsec %f\fP \fIn (in seconds)\fP] [\fB-tosec\fP \fIn (in seconds)\fP]\
     [\fB-frombeat %f\fP \fIn (in beats)\fP] [\fB-tosec\fP \fIn (in beats)\fP]\
@@ -25,13 +27,17 @@ midifilelib distribution available from
 .B -ver
 prints version number and then exits
 .TP
-.B -trks n
+.B -trks n1,n2, etc
 Selects the tracks to be copied where the track numbers start
 from 1.  If more than one track is specified, they should be separated by
 commas. You should always copy track 1 since by convention it contains
 information pertinent to all the other  tracks. By default all tracks
 are copied unless you specify particular tracks using this run time
 parameter.
+.TP
+.B -xtrks n1,n2, etc
+Lists the tracks to exclude from copying. All other tracks are copied.
+This option does not work in combination with -trks.
 .TP
 .B -chns n
 Like above, it specifies the MIDI channels to be copied. By default
@@ -110,4 +116,4 @@ Midicopy will copy tracks 1 and 5 starting from midi pulse position
 .SH AUTHOR
 This manual page was written by Seymour Shlien.
 .SH VERSION
-This man page describes midicopy version 1.18 from October 1 2013.
+This man page describes midicopy version 1.20 from October 28 2013.
