@@ -10043,6 +10043,7 @@ has a random value.
 Fix: initialize vel to 0 in noteon().
 
 
+November 04 2013
 yaps fix: On January 16 2006 an option to display the notes in
 red was introduced. This code did not work well because the
 other musical components were also colored red. The problem
@@ -10054,3 +10055,18 @@ The functions drawnote(), drawrest, and drawbeam() test this
 variable and switch the color to red on a temporary basis in
 order to draw the object.
   
+
+November 12 2013
+abcmatch.c improvement. When running in absolute versus contour
+mode, abcmatch frequently transposes in the wrong direction when
+the key signatures differ since it does not know which direction
+to go. abcmatch now transposes in the direction of minimum distance
+between keys.
+
+For cut time C| abcmatch translates it to 4/4 rather than 2/2
+so it can find more matches. Both changes are in abcmatch.c
+
+
+November 17 2013
+abcmatch.c. Bug fixes so the matched bars have correct bar numbers.
+

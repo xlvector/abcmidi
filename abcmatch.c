@@ -49,7 +49,7 @@ Matching:
 
 
 
-#define VERSION "1.58 October 21 2013"
+#define VERSION "1.60 November 17 2013"
 #include <stdio.h>
 #include <stdlib.h>
 #include "abc.h"
@@ -194,7 +194,7 @@ make_note_representation (int *nnotes, int *nbars, int maxnotes, int maxbars,
 */
 {
   float fract;
-  int i;
+  int i,j;
   int skip_rests, multiplier, inchord, ingrace;
   int maxpitch;
   *nnotes = 0;
@@ -266,16 +266,30 @@ make_note_representation (int *nnotes, int *nbars, int maxnotes, int maxbars,
 	case REP_BAR:
 	case REP_BAR2:
 	case BAR_REP:
-	  midipitch[*nnotes] = BAR;
-	  notelength[*nnotes] = BAR;
-	  (*nnotes)++;
-	  if (*nbars < maxbars) (*nbars)++;
-          else printf("abcmatch too many bars\n");
+/* bar lines at the beginning of the music can cause the
+   bar numbering to be incorrect and loss of synchrony with
+   runabc. If no notes were encountered and nbars = 0, 
+   then we are at the beginning and we wish to bypass
+   these bar line indications. Note bar numbering starts
+   from 0. [SS] 2013-11-17
+*/
+          if (nbars >0 && *nnotes > 0) {
+	    midipitch[*nnotes] = BAR;
+	    notelength[*nnotes] = BAR;
+	    (*nnotes)++;
+	    if (*nbars < maxbars) (*nbars)++;
+            else printf("abcmatch too many bars\n");
+            }
 	  barlineptr[*nbars] = *nnotes;
 	  break;
 	case TIME:
 	  *timesig_num = num[i];
 	  *timesig_denom = denom[i];
+           if (*timesig_num == 2 && *timesig_denom ==2) {
+              *timesig_num = 4;
+              *timesig_denom = 4;
+              /* [SS] 2013-11-12 */
+              }
 	  break;
 	default:
 	  break;
@@ -294,6 +308,17 @@ make_note_representation (int *nnotes, int *nbars, int maxnotes, int maxbars,
   midipitch[*nnotes + 1] = BAR;	/* in case a final bar line is missing */
 /*printf("refno =%d  %d notes %d bar lines  %d/%d time-signature %d sharps\n"
 ,xrefno,(*nnotes),(*nbars),(*timesig_num),(*timesig_denom),sf);*/
+#ifdef DEBUG
+printf("nbars = %d\n",*nbars);
+for (i=0;i<*nbars;i++) printf("barlineptr[%d] = %d\n",i,barlineptr[i]);
+i = 0;
+while (i < 50) {
+  for (j=i;j<i+10;j++) printf("%d ",midipitch[j]); 
+  printf("\n");
+  i +=10;
+  }
+printf("\n\n");
+#endif
 }
 
 
@@ -897,10 +922,10 @@ match_any_bars (int tpbars, int barnum, int delta_key, int nmatches)
               if (tpxref > 0) tpbarstatus[j] = 1;
 	      kmatches++;
 	      if (kmatches == 1)
-		printf ("%d %d  %d ", fileindex, xrefno, barnum - 1);
+		printf ("%d %d  %d ", fileindex, xrefno, barnum);
 /* subtract one from bar because first bar always seems to be 2 */
 	      else
-		printf (" %d ", barnum - 1);
+		printf (" %d ", barnum );
 	      break;
 	    }
 	}
@@ -920,10 +945,9 @@ match_any_bars (int tpbars, int barnum, int delta_key, int nmatches)
               if (tpxref > 0) tpbarstatus[j] = 1;
 	      kmatches++;
 	      if (kmatches == 1)
-		printf ("%d %d  %d ", fileindex, xrefno, barnum - 1);
-/* subtract one from bar because first bar always seems to be 2 */
+		printf ("%d %d  %d ", fileindex, xrefno, barnum);
 	      else
-		printf (" %d ", barnum - 1);
+		printf (" %d ", barnum );
 	      break;
 	    }			/* dif condition */
 	}			/*for loop */
@@ -958,7 +982,7 @@ match_all_bars (int tpbars, int barnum, int delta_key, int nmatches)
 	moffset += msamples[j];
 	if (dif != 0)
 	  return nmatches;
-	matched_bars[kmatches] = barnum + j - 1;
+	matched_bars[kmatches] = barnum + j ;
 	kmatches++;
 	if (j > 15)
 	  break;
@@ -972,7 +996,7 @@ match_all_bars (int tpbars, int barnum, int delta_key, int nmatches)
 	  dif = match_notes (j, barnum + j, delta_key);
 	if (dif != 0)
 	  return nmatches;
-	matched_bars[kmatches] = barnum + j - 1;
+	matched_bars[kmatches] = barnum + j ;
         /*printf("matched %d\n",barnum+j-1);*/
 	kmatches++;
 	if (j > 15)
@@ -1002,14 +1026,14 @@ void find_and_report_matching_bars
   nmatches = 0;
   if (anymode == 1)		/* match any bars in template */
 
-    for (i = 1; i < inbars; i++)
+    for (i = 0; i < inbars; i++)
       {
 	nmatches = match_any_bars (tpbars, i, transpose, nmatches);
       }
 
   else
     /* match all bars in template in sequence */
-    for (i = 1; i <= inbars - tpbars; i++)
+    for (i = 0; i < inbars - tpbars; i++)
       {
 	nmatches = match_all_bars (tpbars, i, transpose, nmatches);
       }
@@ -1413,7 +1437,7 @@ main (argc, argv)
 				&tptimesig_num, &tptimesig_denom, tpbarlineptr,
 				tpnotelength, tpmidipitch);
 
-      /* trim off any initial bar lines */
+      /* trim off any initial bar lines 
       for (i = 0; i < tpbars; i++)
 	{
 	  j = i;
@@ -1423,6 +1447,7 @@ main (argc, argv)
       for (i = j; i < tpbars; i++)
 	tpbarlineptr[i - j] = tpbarlineptr[i];
       tpbars -= j;
+     */
 
       moffset = 0;
 /* if not exact match, i.e. resolution > 0 compute to an
@@ -1482,7 +1507,16 @@ main (argc, argv)
 		  || itimesig_denom != tptimesig_denom)
                  && fixednumberofnotes == 0)
 		continue;
+
+
 	      transpose = mkey - ikey;
+/* we do not know whether to transpose up or down so we will
+   go in the direction with the smallest number of steps
+  [SS] 2013-11-12
+*/
+              if (transpose > 6) transpose = transpose -12;
+              if (transpose < -6) transpose = transpose + 12;
+
 
 /* brief mode is used by the grouper in runabc.tcl */
 	      if (brief)
