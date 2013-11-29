@@ -10070,3 +10070,7 @@ so it can find more matches. Both changes are in abcmatch.c
 November 17 2013
 abcmatch.c. Bug fixes so the matched bars have correct bar numbers.
 
+November 26 2013
+abcmatch.c -br threshold applies to the number of matched bars
+in template instead of matched tune.
+

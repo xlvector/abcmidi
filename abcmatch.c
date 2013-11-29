@@ -49,7 +49,7 @@ Matching:
 
 
 
-#define VERSION "1.60 November 17 2013"
+#define VERSION "1.61 November 26 2013"
 #include <stdio.h>
 #include <stdlib.h>
 #include "abc.h"
@@ -1525,7 +1525,8 @@ main (argc, argv)
 		    continue;	/* don't check tune against itself */
 		  count = count_matched_tune_bars (tpbars, inbars, transpose);
                   kount = count_matching_template_bars();
-		  if (count >= cthresh)
+		  /*if (count >= cthresh) [SS] 2013-11-26 */
+		  if (kount >= cthresh)
 		    {
 		      if (kfile == 0)
 			printf ("%d\n", tpbars);
