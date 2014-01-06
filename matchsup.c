@@ -120,6 +120,7 @@ int hornpipe, last_num, last_denom;
 int timesigset;
 int retain_accidentals;
 int ratio_a, ratio_b;
+int foundtitle; /* flag for capturing on the first title */
 
 struct voicecontext {
   /* maps of accidentals for each stave line */
@@ -637,7 +638,8 @@ char *f;
       };
       break;
     case 'T':
-      strncpy(titlename,f,46);
+     if (foundtitle == 0)  strncpy(titlename,f,46);
+     foundtitle = 1; /* [SS] 2014-01-01 */
       break;
     default:
       {
@@ -1931,6 +1933,7 @@ void event_refno(n)
 /* handles an X: field (which indicates the start of a tune) */
 int n;
 {
+  foundtitle = 0; /* [SS] 2014-01-10 */
   if (dotune) {
     finishfile();
     parseroff();

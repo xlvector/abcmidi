@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.14 November 04 2013"
+#define VERSION "3.17 December 25 2013"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -1194,18 +1194,22 @@ addfeature(VOICE, v->indexno, 0, 0);
 copymap(v);
 }
 
-
+/* This function is not used any more [SS] 2013-12-02 */
 void recurse_back_and_change_bar (int type)
 {
 int previous_voice;
 previous_voice = v->fromsplitno;
 while (previous_voice >-1 && splitdepth > 0) {
   v = getvoicecontext(previous_voice);
-  if (v->lastbarloc > -1) replacefeature(type, 0,0,0, v->lastbarloc);
+/* [SS] 2013-12-1 */
+/*  if (v->lastbarloc > -1) replacefeature(type, 0,0,0, v->lastbarloc);*/
   previous_voice = v->fromsplitno;
   splitdepth--;
   }
 addfeature(VOICE, v->indexno, 0, 0);
+copymap(v);
+/* [SS] 2013-12-1 */
+if (v->lastbarloc > -1) replacefeature(type, 0,0,0, v->lastbarloc);
 }
 
 
@@ -4428,6 +4432,9 @@ static void zerobar()
 
 void event_bar(type, replist)
 /* handles bar lines of various types in the abc */
+/* This function was reorganized on 2013-12-02 [SS] to 
+   handle play on repeats when there are split voices.
+*/
 int type;
 char* replist;
 {
@@ -4436,6 +4443,12 @@ char* replist;
   int voiceno, indexno;
 
   depth = splitdepth;
+  if (splitdepth > 0) {
+  /* we encountered the repeat while in a split voice;
+     first recurse back to the original voice.
+  */
+  recurse_back_to_original_voice();
+  }
 
   newtype = type;
   if ((type == THIN_THICK) || (type == THICK_THIN)) {
@@ -4448,19 +4461,10 @@ char* replist;
     event_playonrep(replist);
   };
 
-if (splitdepth > 0) {
-  /* we encountered the repeat while in a split voice; the
-     repeat goes there but we need to also copy it to all
-     its ancestors.
-  */
-  if (type != SINGLE_BAR)  recurse_back_and_change_bar (type);
-  else recurse_back_to_original_voice();
-  }
-/* depth == 0 implies the repeat symbol was encountered while
-   we are not in a split voice but we need to put repeat symbol
-   in all split voices
+/* If there are any split voices (voice overlays),  we need to
+   put repeat symbol in all the split voices. This is all done
+   by sync_voice() [SS] 2013-12-02.
 */
-else
  {
  voiceno = v->voiceno;
  indexno = v->indexno;
@@ -4470,8 +4474,6 @@ else
       splitdepth++;
       addfeature(VOICE, v->indexno, 0, 0);
       sync_voice (v,0,0);
-      /*addfeature(newtype,0 ,0, 0); sync_voice does this*/
-      if (strlen(replist) > 0) event_playonrep(replist);
      }
  if (v->fromsplitno != -1 || splitdepth >0) recurse_back_to_original_voice();
  }

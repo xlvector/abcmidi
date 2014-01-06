@@ -10074,3 +10074,112 @@ November 26 2013
 abcmatch.c -br threshold applies to the number of matched bars
 in template instead of matched tune.
 
+
+December 2 2013
+abc2midi bug - split voices and repeats. The following tune
+is not converted correctly.
+
+
+X:1
+T: test split file 13
+M: 1/4
+L: 1/4
+K: G
+|:G & E |1 D:|2 F & A|
+
+
+On conversion:
+writing MIDI file s11.mid
+Error in line 8 : Need || |: :| or ::  to mark end of variant ending
+Warning in line 8 : Track 2 is 1946 units long not 2426
+
+The program produces to MIDI tracks of unequal length.
+Track one contains G D G D F and track two contains E z E A.
+In other words track 1 plays both section one and two in the repeat
+instead of just section two.
+
+Surprisingly if we replace |1 and |2 with |[1 and |[2 respectively,
+the conversion is done correctly and there are no errors or
+warnings.
+
+Analysis: in the first pass the feature PLAY_ON_REP belonging
+to voice 1 was placed in voice 2 and two PLAY_ON_REP features
+appear consecutively in voice 2 resulting in the error,
+"Need || |: :| or :: ..." message. When the [1 and [2 are
+used, the internal representation contained in the feature
+arrays is correct.
+
+The problem was traced to the code in event_bar in store.c.
+When the [1 and [2 is used, the PLAY_ON_REP is handled correctly
+by event_playonrep() which is called directly by parsemusic in
+parseabc.c. When |1 or |2 is used, parsemusic does not catch
+these codes and they are handled (mishandled) by event_bar
+when a split voice is present.
+
+Fix: event_bar() was reorganized so that bar commands are sent
+to the original voice rather than the child split voices. When
+the child split voices are sync'd the bar commands are copied to
+the child voices. This seems to work better.  The function
+recurse_back_and_change_bar() is no longer in use.
+
+The test tune was added to split.abc in the doc/programming/ folder.
+
+
+December 14 2013
+abc2midi: The warning "track x is xxxx units long instead of ..."
+was changed to "track x is .... quarter notes long instead of ..."
+The change is was made in writetrack() in genmidi.c.
+
+
+
+December 25 2013
+abc2midi bug: abc2midi does not read customstress files correctly
+using the -CSM option.
+
+The following file containing
+
+Lesnoto
+7/8
+7 7
+110 1.3
+90  1.0
+80  0.7
+100 1.2
+90  0.8
+100 1.2
+90  0.8
+
+is not read correctly. Neither the name Lesnoto or the meter is stored
+in the stresspat structure.
+
+Analysis: in the function read_custom_stress_file() in stresspat.c
+the lines
+stresspat[index].name = name;
+stresspat[index].meter = meter;
+
+copy the address instead of the contents of string arrays name and
+meter. The lines should read
+strcpy(stresspat[index].name,name); /* [RZ] 2013-12-25 */
+strcpy(stresspat[index].meter, meter); /* [RZ] 2013-12-25 */
+
+also gain and expand are not copied into the structures.
+add
+stresspat[index].vel[i] = gain; /* [RZ] 2013-12-25 */
+stresspat[index].expcoef[i] = expand; /* [RZ] 2013-12-25 */
+
+I am grateful to roman.zimmermann@gmx.at for identifying the
+bug and providing the fix.
+
+
+
+January 01 2014
+
+Abcmatch: fixed matchsup.c so it catches only the first title
+of a tune in case that it has alternate titles.
+
+
+January 05 2014
+
+Midiabc: bug the msb and lsb values were interchanged in mftext_pitchbend.
+mftext_pitchbend now also returns the value of bend in MIDI units.
+

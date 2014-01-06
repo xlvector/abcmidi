@@ -113,10 +113,19 @@ L: 1/4
 K: G
 |:G |[1 D & B:|[2 F & A|
 
-X:1
+X:15
 T: splits with octave=1
 M: 4/4
 L: 1/4
 K: G octave=1
 G A B C & E F G A|
+
+
+X:16
+T: test split file 13
+M: 1/4
+L: 1/4
+K: G
+|:G & E |1 D:|2 F & A|
+
 

@@ -2716,7 +2716,8 @@ int xtrack;
   was_slurring = 0; /* [SS] 2011-11-30 */
   expect_repeat = 0;
   while (j < notes) {
-    if (verbose >4) printf("%d %s\n",j,featname[feature[j]]); /* [SS] 2012-11-21*/
+    /* if (verbose >4) printf("%d %s\n",j,featname[feature[j]]);  [SS] 2012-11-21*/
+    if (verbose >4) printf("%d %s %d\n",j,featname[feature[j]],pitch[j]); /* [SS] 2013-12-01*/
     switch(feature[j]) {
     case NOTE:
 	onemorenote = 0;
@@ -3185,9 +3186,12 @@ int xtrack;
   } else {
     if ((xtrack != 0) && (tracklen != tracklen1)) {
       char msg[100];
+      float fbeats,fbeats1; /* [SS] 2013-12-14 */
+      fbeats  = (float) tracklen/(float) 480.0;
+      fbeats1 = (float) tracklen1/(float) 480.0;
 
-      sprintf(msg, "Track %d is %ld units long not %ld",
-              xtrack, tracklen, tracklen1);
+      sprintf(msg, "Track %d is %f quarter notes long not %f",
+              xtrack, fbeats, fbeats1);
       event_warning(msg);
     };
   };
