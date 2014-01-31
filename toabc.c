@@ -51,10 +51,12 @@ extern char* strchr();
 programname fileprogram = ABC2ABC;
 extern int oldchordconvention; /* for handling +..+ chords */
 
+/* holds a fraction */
 struct fract {
   int num;
   int denom;
 };
+
 struct fract barlen; /* length of a bar as given by the time signature */
 struct fract unitlen; /* unit length as given by the L: field */
 struct fract count; /* length of bar so far */
@@ -132,6 +134,7 @@ struct abctext{ /* linked list used to store output before re-formatting */
 };
 struct abctext* head;
 struct abctext* tail;
+
 
 extern char *mode[];
 extern int modekeyshift[];
@@ -1559,13 +1562,14 @@ char *transpose_modmap(int oldkeysigsf, int semitranspose, char* modmap, int exp
 
 /* end of [SS] 2011-02-15 */
 
-void event_key(sharps, s, modeindex, modmap, modmul, gotkey, gotclef, clefname,
+void event_key(sharps, s, modeindex, modmap, modmul, modmicrotone,  gotkey, gotclef, clefname,
           octave, xtranspose, gotoctave, gottranspose, explict)
 int sharps;
 char *s;
 int modeindex;
 char modmap[7];
 int modmul[7];
+struct fraction modmicrotone[7]; /* [SS[ 2014-01-06 */
 int gotkey, gotclef;
 char* clefname;
 int octave, xtranspose, gotoctave, gottranspose;

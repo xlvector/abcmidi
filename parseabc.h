@@ -32,6 +32,12 @@ struct voice_params {
         char other[V_STRLEN+1]; /* [SS] 2011-04-18 */
 	};
 
+/* holds a fraction */
+struct fraction {
+  int num;
+  int denom;
+};
+
 
 #ifndef KANDR
 extern int readnump(char **p);
@@ -99,7 +105,7 @@ extern void event_octave(int num, int local);
 extern void event_info_key(char *key, char *value);
 extern void event_info(char *s);
 extern void event_key(int sharps, char *s, int modeindex, 
-               char modmap[7], int modmul[7],
+               char modmap[7], int modmul[7], struct fraction modmicro[7],
                int gotkey, int gotclef, char *clefname,
                int octave, int transpose, int gotoctave, int gottranspose,
                int explict);

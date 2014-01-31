@@ -1273,6 +1273,10 @@ to the normal temperament using the  command
 %%MIDI termperamentnormal
 
 
+%%MIDI tuninsystem comma53
+quantizes the pitches of the notes using the comma53 system where
+an octave is divided into 53 equally spaced tones.
+
 
 %%MIDI makechordchannels n
 

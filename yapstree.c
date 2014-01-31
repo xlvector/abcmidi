@@ -2080,13 +2080,14 @@ void event_octave(int num, int local)
   };
 }
 
-void event_key(sharps, s, minor, modmap, modmul, gotkey, gotclef, clefstr,
+void event_key(sharps, s, minor, modmap, modmul, modmicrotone, gotkey, gotclef, clefstr,
           octave, transpose, gotoctave, gottranspose, explict)
 int sharps;
 char *s;
 int minor;
 char modmap[7];
 int modmul[7];
+struct fraction modmicrotone[7]; /* [SS] 2014-01-06 */
 int gotkey, gotclef;
 char* clefstr;
 int octave, transpose, gotoctave, gottranspose;

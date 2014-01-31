@@ -10183,3 +10183,62 @@ January 05 2014
 Midiabc: bug the msb and lsb values were interchanged in mftext_pitchbend.
 mftext_pitchbend now also returns the value of bend in MIDI units.
 
+
+January 06-09 2014
+abc2midi new feaure: introducing an option to provide microtone tuning
+in the key signature  for example K:F ^1/2D besides flattening
+B also flattens D's by a half a semitone.
+  
+Implementation includes changes to parsekey in parseabc.c which
+now has to check for microtones in the list of notes following
+the key signature.  A new parameter modmicrotone is introduced in the
+function event_key() which is found in parseabc.c, store.c, yapstree.c,
+toabc.c and matchsup.c. A new struct 'fraction' was added in parseabc.h.
+In store.c altermap() has a new parameter struct modmic[7], which
+is used to transfer the key signature microtone specifications from
+modmicrotone in event_key to a new struct in the voice struct called
+basmic[7]. v->basmic stores the key signature microtone specs if present.
+Function newvoice in store.c transfers global->basemic to v->basemic.
+Function pitchof_b in store.c checks v->basemic to see if the note
+has a microtone defined in the key signature. parsenote in parseabc.c resets
+microtone to 0 (through event_normal_tone()) if the note is not a microtone.
+This is a lot of changes. I hope, I have not introduced new bugs.
+
+If a microtone is detected by parsenote(), its parameters are
+stored in the struct fraction setmicrotone. This struct is automatically
+reset to 0,0 if no microtone is detected.
+
+
+January 12 2014
+
+abc2midi new feature: Makam style music (Turkish) uses a more
+complex music scale (as opposed to the equal temperament scale).
+The comma53 scale divides an octave into 53 microtones. To use
+this scale put "%%MIDI tuningsystem comma53" in your abc file.
+
+Implementation: added to new functions in store.c
+init_p48toc53 initializes the array pt48toc[]. convert_to_comma53()
+changes midipitch and midibend values. Added a new command,
+%%MIDI tuningsystem comma53
+
+January 14 2014
+
+corrections to convert_to_comma53(). Some debugging #defs.
+
+January 16 2014
+
+some fixes to pitchof_b and parsekey.
+
+January 20 2014
+
+abc2midi: microtones now propagate across a bar just like accidentals.
+Major modifications to pitchof_b and other minor fixes (in store.c) were made.
+
+January 26 2014
+abc2midi: more microtone bug fixes. Each octave can hold its own
+microtones. i.e. v->workmic is now a two dimensional array just
+like workmap and workmul.
+
+
+
+

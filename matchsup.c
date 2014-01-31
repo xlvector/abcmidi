@@ -1821,7 +1821,7 @@ static void headerprocess()
   voicesused = 0;
 }
 
-void event_key(sharps, s, modeindex, modmap, modmul, gotkey, gotclef, clefname,
+void event_key(sharps, s, modeindex, modmap, modmul, modmicrotone, gotkey, gotclef, clefname,
           octave, transpose, gotoctave, gottranspose, explict)
 /* handles a K: field */
 int sharps; /* sharps is number of sharps in key signature */
@@ -1829,6 +1829,7 @@ int modeindex; /* 0 major, 1,2,3 minor, 4 locrian, etc.  */
 char *s; /* original string following K: */
 char modmap[7]; /* array of accidentals to be applied */
 int  modmul[7]; /* array giving multiplicity of each accent (1 or 2) */
+struct fraction modmicrotone[7]; /* [SS] 2014-01-06 */
 int gotkey, gotclef;
 int octave, transpose, gotoctave, gottranspose;
 int explict;

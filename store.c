@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.17 December 25 2013"
+#define VERSION "3.24 January 28 2014"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -88,6 +88,11 @@ void load_stress_parameters(char *);
 
 FILE *fp;
 
+/*#define MAKAM*/
+#ifdef MAKAM
+FILE *fc53; /* for debugging */
+#endif
+
 programname fileprogram = ABC2MIDI;
 extern int oldchordconvention; /* for handling +..+ chords */
 
@@ -106,7 +111,8 @@ int chordstart=0;
 int nopropagate_accidentals = 0;
 /* microtonal support and scale temperament */
 int active_pitchbend;
-int microtone=0;
+extern struct fraction setmicrotone; /* [SS] 2014-01-07 */
+extern int microtone;
 int temperament = 0;
 #define SEMISIZE 4096
 int octave_size = 12*SEMISIZE;
@@ -123,6 +129,9 @@ int barflymode = 1; /* [SS] 2011-08-19 */
 char rhythmdesignator[32]; /* [SS] 2011-08-19 */
 int retuning = 0; /* [SS] 2012-04-01 */
 int bend = 8192; /* [SS] 2012-04-01 */
+int comma53 = 0; /* [SS] 2014-01-12 */
+void init_p48toc53 (); /* [SS] 2014-01-12 */ 
+void convert_to_comma53 (char acc, int *midipitch, int* midibend);  
 
 struct voicecontext {
 /* not to be confused with struct voice defined in struct.h and
@@ -131,6 +140,7 @@ struct voicecontext {
   /* maps of accidentals for each stave line */
   char basemap[7], workmap[7][10];
   int  basemul[7], workmul[7][10];
+  struct fraction basemic[7],workmic[7][10];
   int  keyset; /* flag to indicate whether key signature set */
   int default_length;
   int active_meter_num; /* [SS] 2012-11-08 */
@@ -302,6 +312,7 @@ extern char* featname[];
 
 char *csmfilename = NULL;  /* [SS] 2013-04-10 */
 
+
 void addfract(int *xnum, int *xdenom, int a, int b);
 static void zerobar();
 static void addfeature(int f,int p,int n,int d);
@@ -363,9 +374,13 @@ int n;
     for (i=0; i<7; i++) {
       s->basemap[i] = global.basemap[i];
       s->basemul[i] = global.basemul[i];
+      s->basemic[i].num = global.basemic[i].num; /* [SS] 2014-01-08 */
+      s->basemic[i].denom = global.basemic[i].denom;
       for (j=0;j<10;j++) {
         s->workmap[i][j] = global.workmap[i][j];
         s->workmul[i][j] = global.workmul[i][j];
+        s->workmic[i][j].num =   global.workmic[i][j].num; /* [SS] 2014-01-26 */
+        s->workmic[i][j].denom = global.workmic[i][j].denom;
         };
     }
   s->keyset = global.keyset;
@@ -1566,6 +1581,21 @@ char *package, *s;
       fermata_fixed = 0;
       done = 1;
     };
+
+    /* [SS] 2014-01-12 */
+    if (strcmp(command, "tuningsystem") == 0) {
+      skipspace(&p);
+      if (strcmp(p,"comma53") == 0) {
+        printf("%s\n",p);
+        comma53 = 1;
+        init_p48toc53();
+        done = 1;
+#ifdef MAKAM
+        fc53 = fopen("abcmid.txt","w");
+#endif
+        }
+    };
+
     if (strcmp(command, "ratio") == 0) {
       int a, b;
 
@@ -2909,15 +2939,15 @@ char *p;
   /* does nothing */
 }
 
-static int pitchof(note, accidental, mult, octave, propogate_accs)
+static int pitchof(note, accidental, mult, octave, propagate_accs)
 /* This code is used for handling gchords */
 /* finds MIDI pitch value for note */
-/* if propogate_accs is 1, apply any accidental to all instances of  */
-/* that note in the bar. If propogate_accs is 0, accidental does not */
+/* if propagate_accs is 1, apply any accidental to all instances of  */
+/* that note in the bar. If propagate_accs is 0, accidental does not */
 /* apply to other notes */
 char note, accidental;
 int mult, octave;
-int propogate_accs;
+int propagate_accs;
 {
   int p;
   char acc;
@@ -2931,13 +2961,13 @@ int propogate_accs;
   mul = mult;
   noteno = (int)note - 'a';
   if (acc == ' ' && !microtone ) { 
-/* if microtone do not propogate accidentals to this
+/* if microtone do not propagate accidentals to this
    note.
 */
     acc = v->workmap[noteno][octave+4];
     mul = v->workmul[noteno][octave+4];
   } else {
-    if ((retain_accidentals) && (propogate_accs)) {
+    if ((retain_accidentals) && (propagate_accs)) {
       v->workmap[noteno][octave+4] = acc;
       v->workmul[noteno][octave+4] = mul;
     };
@@ -2966,21 +2996,22 @@ pitch = p + 12*octave + middle_c;
 return pitch;
 }
 
-static int pitchof_b(note, accidental, mult, octave, propogate_accs,pitchbend)
+static int pitchof_b(note, accidental, mult, octave, propagate_accs,pitchbend)
 /* computes MIDI pitch for note. If global temperament is set,
    it will apply a linear temperament and return a
-   pitchbend. If propogate_accs is 1, apply any accidental to all
-   instances of  that note in the bar. If propogate_accs is 0, 
+   pitchbend. If propagate_accs is 1, apply any accidental to all
+   instances of  that note in the bar. If propagate_accs is 0, 
    accidental does not apply to other notes */
 char note, accidental;
 int mult, octave;
-int propogate_accs;
+int propagate_accs;
 int *pitchbend;
 {
   int p;
   char acc;
   int mul, noteno;
   int pitch4096,pitch,bend;
+  int a,b;
 
   static int scale[7] = {0, 2, 4, 5, 7, 9, 11};
   const int accidental_size = 7*fifth_size - 4*octave_size;
@@ -2993,22 +3024,25 @@ int *pitchbend;
     3*fifth_size-octave_size,
     5*fifth_size-2*octave_size
   };
-
   static const char *anoctave = "cdefgab";
 
   acc = accidental;
   mul = mult;
   noteno = (int)note - 'a';
+
   if (acc == ' ' && !microtone) {
-/* if microtone do not propogate accidentals to this
-   note.
-*/
     acc = v->workmap[noteno][octave+4];
     mul = v->workmul[noteno][octave+4];
+    a = v->workmic[noteno][octave+4].num;   /* 2014-01-26 */
+    b = v->workmic[noteno][octave+4].denom;
+    event_microtone(1,a,b);
   } else {
-    if ((retain_accidentals) && (propogate_accs)) {
+    if ((retain_accidentals) && (propagate_accs)) {
       v->workmap[noteno][octave+4] = acc;
       v->workmul[noteno][octave+4] = mul;
+      /* [SS] 2014-01-26 */
+      v->workmic[noteno][octave+4].num   = setmicrotone.num;
+      v->workmic[noteno][octave+4].denom = setmicrotone.denom;
     };
   };
 
@@ -3023,14 +3057,74 @@ int *pitchbend;
     bend = bend<0?0:(bend>16383?16383:bend);
    } else {
     p = scale[p];
-    if (acc == '^') p = p + mul;
-    if (acc == '_') p = p - mul;
+    if (acc == '^' && !microtone) p = p + mul; /* [SS] 2014-01-20 */
+    if (acc == '_' && !microtone) p = p - mul;
     pitch = p + 12*octave + middle_c;
     bend = 8192; /* corresponds to zero bend */
     }
 if (!microtone) *pitchbend = bend; /* don't override microtone */
+if (comma53) 
+#ifdef MAKAM
+ if (comma53) fprintf(fc53,"%c%d ",note,octave+4);
+#endif
+ if (comma53) convert_to_comma53 (acc,  &pitch, pitchbend); 
+ microtone = 0; /* [SS] 2014-01-25 */
+ setmicrotone.num = 0; /* [SS] 2014-01-25 */
+ setmicrotone.denom = 0;
 return pitch; 
 }
+
+
+
+/* [SS] 2014-01-12  comma53 support: start */
+
+int p48toc53[50];
+
+void init_p48toc53 () {
+int i,c;
+c = 0;
+for (i=0; i< 48; i++) {
+  p48toc53[i] = c;
+/* if black note leave room for extra comma */
+  if (i == 4 || i == 12 || i == 24 || i == 32 || i == 40)
+     c = c+2;
+  else
+     c = c+1;
+  //printf("%d  ",p48toc53[i]);
+  }
+}
+
+void convert_to_comma53 (char acc, int *midipitch, int* midibend) 
+{
+/* The function converts *midipitch, *midibend to the
+   closest comma53 pitch values.
+*/
+float c53factor = 0.22641509;
+float eqtempmidi,bendvalue,c53midi;
+int p48,octave,c53;
+bendvalue = (*midibend - 8192.0)/4096.0;
+eqtempmidi = (float) (*midipitch) + bendvalue;
+octave = (int) (eqtempmidi / 12.0);
+p48 = (int) (eqtempmidi * 4.0) % 48;
+c53 = p48toc53[p48] + 53*octave;
+/* handle b4 or #5 (eg D4b4 or C4#5) in nameAE */
+if (p48 == 4 || p48 == 12 || p48 == 24 || p48 == 32 || p48 == 40)
+   if (bendvalue > 1.1 || bendvalue < -0.8) c53++;
+#ifdef MAKAM
+fprintf(fc53,"%d\n",c53);
+#endif
+
+/*printf("p48 = %d\n c53 = %d\n",p48,c53);*/
+c53midi = (float) c53 * c53factor;
+*midipitch = (int) c53midi;
+bendvalue = c53midi - (float) *midipitch;
+*midibend = 8192 + (int) (bendvalue * 4096);
+}
+
+
+/* [SS] 2014-01-12 */
+
+
 
 
 
@@ -3479,8 +3573,9 @@ int xoctave, n, m;
     pitch = pitchof_b(note, accidental, mult, octave, 0,&active_pitchbend);
   else
     pitch = pitchof_b(note, accidental, mult, octave, 1,&active_pitchbend);
+#ifndef MAKAM
   pitch_noacc = pitchof_b(note, 0, 0, octave, 0,&dummy);
-
+#endif
   if (decorators[FERMATA] && !ignore_fermata) {
     if(fermata_fixed) addfract(&num,&denom,1,1);
     else num = num*2;
@@ -3558,8 +3653,18 @@ int bend;
 /* pitchwheel range +/- 2 semitones according to General MIDI
 specification*/
 /* resolution of 14bit -- order of bytes is inverted for pitchbend */
-bend = dir*((int)(4096.0*a/b))+8192; /* sorry for the float! */
-bend = bend<0?0:(bend>16383?16383:bend);
+setmicrotone.num = dir*a; /* [SS] 2014-01-20 */
+setmicrotone.denom = b;
+if (a == 0) {bend = 8192; /* [SS] 2014-01-19 */
+             microtone = 0; /* [SS] 2014-01-20 */
+             setmicrotone.num = 0; /* [SS] 2014-01-25 */
+             setmicrotone.denom = 0;
+             return;
+            }
+else {
+  bend = dir*((int)(4096.0*a/b))+8192; /* sorry for the float! */
+  bend = bend<0?0:(bend>16383?16383:bend);
+  }
 active_pitchbend = bend;
 microtone=1;
 }
@@ -3830,11 +3935,12 @@ int mult[7];
   if (sf <= -7) map['f'-'a'] = '_';
 }
 
-static void altermap(v, modmap, modmul)
+static void altermap(v, modmap, modmul,modmic)
 /* apply modifiers to a set of accidentals */
 struct voicecontext* v;
 char modmap[7];
 int modmul[7];
+struct fraction modmic[7];
 {
   int i;
 
@@ -3842,6 +3948,9 @@ int modmul[7];
     if (modmap[i] != ' ') {
       v->basemap[i] = modmap[i];
       v->basemul[i] = modmul[i];
+      v->basemic[i].num = modmic[i].num;
+      v->basemic[i].denom = modmic[i].denom;
+      /*printf("basemic[%d] = %d %d\n",i,modmic[i].num,modmic[i].denom);*/
     };
   };
 }
@@ -3856,6 +3965,9 @@ struct voicecontext* v;
     for (j=0;j<10;j++) {
       v->workmap[i][j] = v->basemap[i];
       v->workmul[i][j] = v->basemul[i];
+    /* [SS] 2014-01-26 */
+      v->workmic[i][j].num = v->basemic[i].num;
+      v->workmic[i][j].denom = v->basemic[i].denom;
       }
    };
 }
@@ -4900,7 +5012,7 @@ static void headerprocess()
   voicesused = 0;
 }
 
-void event_key(sharps, s, modeindex, modmap, modmul, gotkey, gotclef, clefname,
+void event_key(sharps, s, modeindex, modmap, modmul, modmicrotone, gotkey, gotclef, clefname,
           octave, transpose, gotoctave, gottranspose, explict)
 /* handles a K: field */
 int sharps; /* sharps is number of sharps in key signature */
@@ -4908,6 +5020,7 @@ int modeindex; /* 0 major, 1,2,3 minor, 4 locrian, etc.  */
 char *s; /* original string following K: */
 char modmap[7]; /* array of accidentals to be applied */
 int  modmul[7]; /* array giving multiplicity of each accent (1 or 2) */
+struct fraction modmicrotone[7]; /* [SS] 2014-01-06 */
 int gotkey, gotclef;
 int octave, transpose, gotoctave, gottranspose;
 int explict;
@@ -4919,7 +5032,7 @@ char* clefname;
   if ((dotune) && gotkey) {
     if (pastheader) {
       if (!explict) setmap(sharps, v->basemap, v->basemul); /* [SS] 2010-05-08*/
-      altermap(v, modmap, modmul);
+      altermap(v, modmap, modmul,modmicrotone);
       copymap(v);
       addfeature(KEY, sharps, 0, minor);
       if (gottranspose) {
@@ -4930,7 +5043,7 @@ char* clefname;
         addfeature(GTRANSPOSE, transpose, 0, 0);
       };
       if (!explict) setmap(sharps, global.basemap, global.basemul); /* [SS] 2010-05-08 */
-      altermap(&global, modmap, modmul);
+      altermap(&global, modmap, modmul,modmicrotone);
       global.keyset=1;
       copymap(&global);
       sf = sharps;
