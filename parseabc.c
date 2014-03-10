@@ -2638,7 +2638,7 @@ parseline (line)
 	    };
 	  if ((*(q + 1) == ':') || (*(q + 1) == '|'))
 	    {
-	      event_warning ("potentially ambiguous line");
+	      event_warning ("Potentially ambiguous line - either a :| repeat or a field command -- cannot distinguish.");
 /*    [SS] 2013-03-20 */
 /*     };             */
 /*      parsefield(*p,q+1); */

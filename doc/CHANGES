@@ -10241,4 +10241,52 @@ like workmap and workmul.
 
 
 
+February 05 2014
+
+abc2midi: the following file causes abc2midi (and other programs) to
+behave erratically.
+
+X:9
+T:Have you ever wondered?
+L:1/8
+M:4/4
+Q:1/2=90
+K:G
+V:1
+CDEF |
+W:| Have you ever | wondered why the | girls do | skipping, and the
+W:| boys play | football and the | grans do | knitting?
+W:| Who made the | rules that the | people all o- | bey?  And
+W:| What's with the | "girls' thing", | "boys' thing" | anyway?
+
+X:10
+T:Warm-up 1
+L:1/4
+M:2/2
+Q:1/2=80
+K:Bb
+|[B,DFB]2z2 |
+
+abc2midi returns the message
+Warning in line 9 : Potentially ambiguous line.
+Warning in line 9 : Ignoring reserved character W
+Error in line 9 : Unrecognized character: o
+Error in line 9 : Malformed note : expecting a-g or A-G
+Error in line 9 : Unrecognized character: r
+Error in line 9 : Unrecognized character: w
+Error in line 9 : Unrecognized character: o
+Error in line 9 : Unrecognized character: n
+and many more messages
+
+Analysis: abc2midi sees :| after the W and assumes it is an end
+repeat in the body. It tries to treat the rest of the line like
+music.
+
+Fix: I have improved the warning in parseabc.c so it is more meaningful.
+It is now
+Warning in line 9 : Potentially ambiguous line - either a :| repeat or a field command -- cannot distinguish.
+
+This applies to all programs, yaps, abc2abc etc but it is too much trouble
+to give them new version numbers.
+
 
