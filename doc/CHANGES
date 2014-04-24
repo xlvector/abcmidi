@@ -10290,3 +10290,106 @@ This applies to all programs, yaps, abc2abc etc but it is too much trouble
 to give them new version numbers.
 
 
+
+April 03 2014
+
+Abc2midi bug: tied note at end of bar combined with Barfly stress model.
+In the following example:
+
+X:1
+T: Stress model bug
+L:1/8
+M:2/4
+K:Gmin
+%%MIDI ptstress 4 100 1.10 100 1.10 100 1.0 100 0.8
+|Gc BA-|AG FG|
+
+Abc2midi returns the following error message
+writing MIDI file stress1.mid
+Warning in line 7 : Bar 1 has 21/10 units instead of 2
+
+Analysis: the problem is with the tied note A which
+crosses a measure. The tied notes A-|A are tied together
+into a single note by the function tiefix() in store.c
+and the stress model is applied to the combined note. This
+becomes obvious when running abc2midi with -v 2 option.r 2
+pitch 67 from = 0/1 (0/1) to 1/2 (1/1) becomes 0/1 11/20 - 11/20
+pitch 72 from = 1/2 (1/1) to 1/1 (2/1) becomes 11/20 11/10 - 11/20
+pitch 70 from = 1/1 (2/1) to 3/2 (3/1) becomes 11/10 8/5 - 1/2
+pitch 69 from = 3/2 (3/1) to 5/2 (5/1) becomes 8/5 51/20 - 19/20
+bar 3
+pitch 67 from = 0/1 (0/1) to 1/2 (1/1) becomes 0/1 11/20 - 11/20
+pitch 65 from = 1/2 (1/1) to 1/1 (2/1) becomes 11/20 11/10 - 11/20
+pitch 67 from = 1/1 (2/1) to 3/2 (3/1) becomes 11/10 8/5 - 1/2
+bar 4
+writing MIDI file stress
+
+The fix is to apply the stress model prior to combining
+the tied notes. The fix was applied to the function finishfile()
+in store.c
+
+
+April 10 2014
+
+Abc2midi bug: The P: field was introduced to allow repeating
+parts of the tune in complex patterns such as P:ABCBD; however
+it is frequently used just to annotate a section of the music.
+When it is used as annotation, you often get annoying warnings
+such as.
+Error in line 10 : Part must be one of A-Z
+In some situations, this annotation may cause the music to
+play incorrectly. For example in this tune,
+
+X:1
+T: part annotationmistaken
+M: 3/4
+K: G
+V:1
+B3c BA|B3c BA|B4e2|B3d ef|
+ g4 g2|f4 e2|f3 gf2|B6|
+V:2
+G3A GF|G3A GF|E4B2|G4E2|
+P: section B
+B4 B2|^d4 ^c2|^d3 e d2|F6|
+
+the last line in V:2 is played twice.
+
+
+Fix: in event_part() in store.c we check whether a valid P:
+command like P:A2BC was detected in the header. If none was
+found, abc2midi ignores any P: commands after the header.
+
+
+
+April 24 2014
+
+abc2midi: slur bug
+Abc2midi sometimes reports unbalanced slurs when they are
+actually correct. For example
+
+X:1
+T: Slur error messages
+L:1/8
+M:2/2
+Q:1/2=110
+K:Dm
+P:A
+|: "Dm"a2ag a2ag | "^/"agfe dcAF | "Gm"GABA B^cdc | "^/"d^cBA BAGB |
+"A"A=B^cB cded | "^/"efgf eA=B^c | "^/"d(^ga)(e f)(^cd)(A |1 "^/"B)AFE GAdf :|2 "^/"B)AFE DCB,A, |
+P:B
+|: "Gm"G,BBB BcBB | "^/"B,BBB BcBB | "Dm"FAAA Adde | "^/"fedc AFED |
+"Gm"DBBB BcBB | "A"EAAA A=B^cA | "^/"d(^ga)(e f)(^cd)(A |1 "^/"B)AFE DCB,A,:|2 "^/"B)AFE "Dm"D4 |
+
+The following messages were returned.
+Warning in line 9 : No slur to close
+Warning in line 12 : No slur to close
+writing MIDI file colin1.mid
+Error in line 12 : Unexpected start of slur found
+Error in line 12 : Unexpected start of slur found
+Error in line 12 : Unexpected start of slur found
+
+analysis: abc2midi could not match the slurs when they cross into
+a part section (eg :[2 "^/" B) ...).
+fix: slur indications do not affect the output midi file so the
+messages are somewhat irrelevant. The warnings and error messages
+have been suppressed.

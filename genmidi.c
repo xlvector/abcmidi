@@ -3129,16 +3129,20 @@ int xtrack;
       global_transpose +=  pitch[j];
       break;
     case SLUR_ON:
+      /*
       if (slurring) {
         event_error("Unexpected start of slur found");
-      };
+      }; [SS] 2014-04-24
+      */
       slurring = 1;
       was_slurring = 1; /* [SS] 2011-11-30 */
       break;
     case SLUR_OFF:
-      if (!slurring && !was_slurring) {  /* [SS] 2011-11-30 */
+      /*
+      if (!slurring && !was_slurring) { 
         event_error("Unexpected end of slur found");
       };
+      [SS] 2014-04-24 */
       slurring = 0;
       was_slurring = 0;
       break;

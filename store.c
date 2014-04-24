@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.25 February 05 2014"
+#define VERSION "3.28 April 24 2014"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -2270,6 +2270,7 @@ char* s;
   if (dotune) {
     p = s;
     skipspace(&p);
+    if (pastheader && parts == -1) return; /* [SS] 2014-04-10 */
     if (pastheader) {
       if (((int)*p < 'A') || ((int)*p > 'Z')) {
         event_error("Part must be one of A-Z");
@@ -2578,7 +2579,7 @@ if (v->inslur) {
     addfeature(SLUR_OFF, 0, 0, 0);
     v->inslur = 0;
     }
-else event_warning("No slur to close");
+/*else event_warning("No slur to close"); [SS] 2014-04-24 */
 }
 
 
@@ -5235,7 +5236,8 @@ static void finishfile()
       printf("handling grace notes\n");
     };
     dograce();
-    tiefix();
+    if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
+    tiefix(); /* [SS] 2014-04-03 */
     if ((parts == -1) && (voicecount == 1)) {
       if (verbose > 1) {
         printf("fixing repeats\n");
@@ -5243,7 +5245,6 @@ static void finishfile()
       fixreps();
     };
 
-    if (barflymode) apply_bf_stress_factors (); /* [SS] 2011-08-24 */ 
  
     expand_ornaments();
     if (parts >= 0) fix_part_start(); /* [SS] 2012-12-25 */
