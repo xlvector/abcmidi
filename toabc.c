@@ -1120,6 +1120,14 @@ int continuation;
   };
 }
 
+/* [SS] 2014-08-16 */
+void appendfield (morewords)
+char *morewords;
+{
+printf("appendfield not implemented here\n");
+}
+
+
 void event_part(s)
 char* s;
 {

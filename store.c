@@ -2133,6 +2133,24 @@ int continuation;
   };
 }
 
+/* [SS] 2014-08-16 */
+void append_words (morewords)
+char *morewords;
+{
+char *p;
+p = concatenatestring(words[wcount-1],morewords);
+words[wcount-1] = p;
+}
+
+/* [SS] 2014-08-16 */
+void appendfield (morewords)
+char *morewords;
+{
+append_words (morewords);
+}
+
+
+
 static void checkbreak()
 /* check that we are in not in chord, grace notes or tuple */
 /* called at voice change */

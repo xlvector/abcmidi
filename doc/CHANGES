@@ -10393,3 +10393,72 @@ a part section (eg :[2 "^/" B) ...).
 fix: slur indications do not affect the output midi file so the
 messages are somewhat irrelevant. The warnings and error messages
 have been suppressed.
+
+
+August 11 2014 
+
+Introduced a new variable abcversion and parse the comment
+%%abc-version 2.0
+or
+%%abc-version 2.1
+if present.
+
+
+
+August 14 2014
+
+Bug: line continuation of a lyric field w: does not work.
+In the following example,
+
+X:1
+T: vocal
+M: 4/4
+L: 1/4
+K: G
+G A G B|\
+ E A G B|
+w: ga ba la ba |\
+ fa ma da ka|
+GGGB|
+w: la ma fa da|
+
+the line fa ma da ka is not processed as part of the previous
+w: field.
+
+Apparently there was an attempt in preparse_words(s) (in parseabc.c)
+to handle continuations of the w: field, however, the implementation
+was not complete. (There is no signal, telling parseline() to
+treat the continuation of the w: field.) Therefore this feature
+never worked in all of the abcmidi programs (abc2midi, abc2abc and yaps).
+I have decided not to support this feature and instead plan to
+introduce an alternative using the +: command defined in the
+2.1 abc standard. The following warning message is now being issued when
+this situation is detected.
+Warning in line 8 : \n continuation no longer supported in w: line
+
+
+August 15 2014
+
+New feature: the abc-version 2.1 standard introduces a new method for
+continuing the w; using the +: for lyrics. It also discourages the use
+of the backslash continuation. To handle the +: line, it was necessary
+to keep track of the last field command. A new global
+char lastfieldcmd was introduced in parseabc. The variable is modified
+at the end of function parsefield in parseabc.c. Presently it only
+signals a w: field command. For all other field commands it is set
+to a blank. A new case statement for +: was also introduced in parsefield().
+It calls a new function, append_fieldcmd() if lastfieldcmd == 'w'.
+The function parseline() was extended to recoginize +: as a valid
+field command. The function parsefield() was modified to allow the
++: command to appear in the body of the tune.
+
+August 16 2014
+
+Continuing from above: introduced a new function concatenatestrings()
+in parseabc.c. In store.c, yapstree.c, toabc.c and matchsup.c
+introduced a new function called appendfield(). Appendfield() was
+only implemented in store.c where it calls a new function called
+append_words. In the files, appendfield() merely returns a message
+that it is not implemented yet.
+
+

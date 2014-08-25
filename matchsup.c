@@ -655,6 +655,13 @@ int continuation;
 {
 }
 
+/* [SS] 2014-08-16 */
+void appendfield (morewords)
+char *morewords;
+{
+printf("appendfield not implemented here\n");
+}
+
 
 static void checkbreak()
 /* check that we are in not in chord, grace notes or tuple */

@@ -103,6 +103,8 @@ int microtone;			/* [SS] 2014-01-19 */
 
 extern programname fileprogram;
 int oldchordconvention = 0;
+char * abcversion = "2.0"; /* [SS] 2014-08-11 */
+char lastfieldcmd = ' '; /* [SS] 2014-08-15 */
 
 char *mode[10] = { "maj", "min", "m",
   "aeo", "loc", "ion", "dor", "phr", "lyd", "mix"
@@ -144,6 +146,17 @@ addstring (s)
   strcpy (p, s);
   return (p);
 }
+
+/* [SS] 2014-08-16 */
+char * concatenatestring(s1,s2)
+   char * s1;
+   char * s2;
+{  char *p;
+  p = (char *) checkmalloc (strlen(s1) + strlen(s2) + 1);
+  snprintf(p,sizeof p, "%s%s",s1,s2);
+  return p;
+}
+
 
 void
 initvstring (s)
@@ -1676,7 +1689,9 @@ parse_precomment (s)
 {
   char package[40];
   char *p;
+  int success;
 
+  success = sscanf (s, "%%abc-version %s", &abcversion); /* [SS] 2014-08-11 */
   if (*s == '%')
     {
       p = s + 1;
@@ -1773,6 +1788,15 @@ parse_tempo (place)
   event_tempo (n, a, b, relative, pre_string, post_string);
 }
 
+
+void append_fieldcmd (key, s)  /* [SS] 2014-08-15 */
+char key;
+char *s;
+{
+printf ("appendfieldcmd\n");
+appendfield(s);
+} 
+
 void
 preparse_words (s)
      char *s;
@@ -1796,6 +1820,8 @@ preparse_words (s)
     }
   else
     {
+      /* [SS] 2014-08-14 */
+      event_warning ("\\n continuation no longer supported in w: line");
       continuation = 1;
       /* remove continuation character */
       *(s + l) = '\0';
@@ -1902,7 +1928,8 @@ parsefield (key, field)
   if (parsing == 0)
     return;
 
-  if ((inbody) && (strchr ("EIKLMPQTVdswW", key) == NULL))
+  /*if ((inbody) && (strchr ("EIKLMPQTVdswW", key) == NULL)) [SS] 2014-08-15 */
+  if ((inbody) && (strchr ("EIKLMPQTVdswW+", key) == NULL))
     {
       event_error ("Field not allowed in tune body");
     };
@@ -2073,6 +2100,9 @@ parsefield (key, field)
     case 's':
       event_field (key, place);	/* [SS] 2010-02-23 */
       break;
+    case '+':
+      if (lastfieldcmd == 'w') 
+          append_fieldcmd (key, place); /*[SS] 2014-08-15 */
     default:
       event_field (key, place);
     };
@@ -2080,6 +2110,8 @@ parsefield (key, field)
     {
       parse_precomment (comment);
     };
+  if (key == 'w') lastfieldcmd = 'w'; /* [SS] 2014-08-15 */
+  else lastfieldcmd = ' ';  /* [SS[ 2014-08-15 */
 }
 
 char *
@@ -2626,7 +2658,8 @@ parseline (line)
 	event_linebreak ();
       return;
     };
-  if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ", *p) != NULL)
+  /*if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ", *p) != NULL) [SS] 2014-08-15 */
+  if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ+", *p) != NULL)
     {
       q = p + 1;
       skipspace (&q);
