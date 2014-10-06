@@ -10462,3 +10462,75 @@ append_words. In the files, appendfield() merely returns a message
 that it is not implemented yet.
 
 
+September 07 2014
+
+Continuing from above: the function appendfield() in toabc.c was
+replaced so abc2abc will also handle the +: command. Note that
+abc2abc the -n  X option which reformats with a new linebreak
+every X bars will probably not work correctly when the tune
+contains lyrics.
+
+
+September 09 2014
+
+Abc2midi fix: the !bend! action does not apply correctly to microtones.
+In the following example:
+
+X:1
+T: bend about microtone
+M: 4/4
+L: 1/4
+K: G
+!bend!_1/4D2 z2|!bend!D2 z2|
+!bend!^1/4D2 z2|!bend!D2 z2|
+
+All the bends start from D natural.
+
+Analysis: queues.c always initializes pitchbend to 8192 rather than
+the value set by the microtone.
+
+Fix: it was necessary to introduce another global variable, int bendstate,
+to be shared between genmidi.c and queues.c. The variable bendstate
+stores the pitchbend value when midi_noteon is called (in genmidi.c).
+In note_effect() in queues.c, pitchbend is set to bendstate rather
+than 8192.
+
+
+September 10 2014
+September 11 2014
+Abc2midi: introducing %%MIDI bendstring n1 n2 n3 ...
+This is a more general way of specifying the pitchbend track for
+a note. The command is followed by a series of integers n1, n2
+etc. which specify the change to pitchbend following each time
+increment.
+
+Method: In genmidi.c introduced the array benddata[16] which
+holds the series of integers and bendnvals the number of these
+integers. Benddata and bendvals is passed to genmidi through
+an extern declaration. In dodeferred() in genmidi.c added a test for
+%%MIDI bendstring. In queues.c added a new function, note_effect2()
+which increments the pitchbend variable by benddata[i], and
+produces a %%MIDI pitchbend command at regular time intervals.
+In genmidi.c introduced a variable bendtype and set it to 1.
+The %%MIDI bendstring command sets bendtype to 2 to signal that the
+function note_effect2() should be called instead of note_effect().
+
+
+September 22 2014
+September 23 2014
+September 24 2014
+Abc2midi: when only one integer follows the %%MIDI bendstring
+command, the !bend! command now applies the pitchbend to the
+entire note. This provides another method for shifting the
+pitch of the note instead of preceding it with a microtone
+accidental. At the end of the note, the pitch of the note
+is restored to its original value.
+
+Implementation: in dodeferred() in genmidi.c we check for just
+one value following the bendstring command and set the bendtype
+variable to 3 so that queues.c calls the new function
+note_effect3().
+
+September 28 2014
+
+Extended the maximum bendstring length to 50.

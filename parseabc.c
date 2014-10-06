@@ -37,9 +37,16 @@
 
 #define SIZE_ABBREVIATIONS ('Z' - 'H' + 1)
 
+
+#ifdef WIN32
+#define snprintf _snprintf_s
+#endif
+
+
 #ifdef _MSC_VER
 #define ANSILIBS
 #define casecmp stricmp
+#define _CRT_SECURE_NO_WARNINGS
 #else
 #define casecmp strcasecmp
 #endif
@@ -1273,7 +1280,7 @@ parsekey (str)
 	      parsed = 1;
 	      j = (int) c - 'A';
               if (j > 7) j = (int) c - 'a';
-              if (j > 7 || j < 0) {printf("invalid j = %d\n"); exit(-1);}
+              if (j > 7 || j < 0) {printf("invalid j = %d\n",j); exit(-1);}
 	      if (word[0] == '_')
 		a = -a;
 	      /*printf("a/b = %d/%d for %c\n",a,b,c); */
@@ -1793,7 +1800,6 @@ void append_fieldcmd (key, s)  /* [SS] 2014-08-15 */
 char key;
 char *s;
 {
-printf ("appendfieldcmd\n");
 appendfield(s);
 } 
 
@@ -2103,6 +2109,7 @@ parsefield (key, field)
     case '+':
       if (lastfieldcmd == 'w') 
           append_fieldcmd (key, place); /*[SS] 2014-08-15 */
+      break; /* [SS] 2014-09-07 */
     default:
       event_field (key, place);
     };

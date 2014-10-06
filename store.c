@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.28 April 24 2014"
+#define VERSION "3.36 September 28 2014"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -40,11 +40,12 @@
 #ifdef _MSC_VER
 #define ANSILIBS
 #define strcasecmp stricmp
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 
 #ifdef WIN32
-#define snprintf _snprintf
+#define snprintf _snprintf_s
 #endif
 
 #include "abc.h"

@@ -21,7 +21,7 @@
 
 /* back-end for outputting (possibly modified) abc */
 
-#define VERSION "1.74 April 21 2013"
+#define VERSION "1.75 September 08 2014"
 
 /* for Microsoft Visual C++ 6.0 or higher */
 #ifdef _MSC_VER
@@ -1120,11 +1120,12 @@ int continuation;
   };
 }
 
-/* [SS] 2014-08-16 */
+/* [SS] 2014-09-07 */
 void appendfield (morewords)
 char *morewords;
 {
-printf("appendfield not implemented here\n");
+emit_string("+: ");
+emit_string(morewords);
 }
 
 

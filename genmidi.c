@@ -230,6 +230,14 @@ int beatmodel = 0; /* flag selecting standard or Phil's model */
 int bendvelocity = 100;
 int bendacceleration = 300;
 
+/* [SS] 2014-09-09 */
+int bendstate = 8192; /* also linked with queues.c */
+
+/* [SS] 2014-09-10 */
+int benddata[50];
+int bendnvals;
+int bendtype = 1;
+
 /* for handling stress models */
 int nseg;       /* number of segments */
 int ngain[32];  /* gain factor for each segment */
@@ -1324,6 +1332,7 @@ int pitch, chan, vel, pitchbend;
    if(pitchbend != current_pitchbend[channel] && chan != 9) {
       data[0] = (char) (pitchbend&0x7f);
       data[1] = (char) ((pitchbend>>7)&0x7f);
+      bendstate = pitchbend; /* [SS] 2014-09-09 */
       mf_write_midi_event(delta_time,pitch_wheel,chan,data,2);
       delta_time=0;
       current_pitchbend[channel] = pitchbend;
@@ -1797,6 +1806,7 @@ int noteson;
   char inputfile[256]; /* [SS] 2011-07-04 */
   int done;
   int val;
+  int i;
 
   p = s;
   skipspace(&p);
@@ -1906,8 +1916,27 @@ int noteson;
     skipspace(&p);
     val = readsnump(&p);
     bendacceleration = val;
+    bendtype = 1;
     done = 1;
     }
+
+  /* [SS] 2014-09-10 */
+  if (strcmp(command, "bendstring") == 0) {
+     i = 0;
+     while (i<50) { /* [SS] 2014-09-10 */
+          benddata[i] = readsnump(&p);
+          skipspace(&p);
+          i = i + 1;
+          if (*p == 0) break;
+        };
+     bendnvals = i;
+     done = 1;
+     if (bendnvals == 1) bendtype = 3; /* [SS] 2014-09-22 */
+     else bendtype = 2;
+     }
+
+
+
 
 
   if (strcmp(command, "drone") == 0) {
@@ -2567,7 +2596,7 @@ int xtrack;
   int trackvoice;
   int inchord;
   int in_varend;
-  int j, pass;
+  int i,j, pass;
   int maxpass;
   int expect_repeat;
   int slurring;
@@ -2609,6 +2638,13 @@ int xtrack;
   drumbarcount=0;
   gchordbarcount=0;
   effecton=0;  /* [SS] 2012-12-11 */
+  bendtype = 1; /* [SS] 2014-09-11 */
+
+  bendstate = 8192; /* [SS] 2014-09-10 */
+  for (i=0;i<16; i++) benddata[i] = 0;
+  bendnvals = 0;
+
+/* [SS] 2014-09-10 */
   if (karaoke) {
     if (xtrack == 0)                  
        karaokestarttrack(xtrack);
@@ -3172,7 +3208,7 @@ int xtrack;
        break;
 
     case EFFECT: 
-       effecton = 1;  /* [SS] 2012-12-11 */
+       effecton = bendtype;  /* [SS] 2012-12-11 2014-09-11 */
        break;
     
     default:
