@@ -31,7 +31,7 @@
  * Wil Macaulay (wil@syndesis.com)
  */
 
-#define VERSION "3.36 September 28 2014"
+#define VERSION "3.37 October 16 2014"
 /* enables reading V: indication in header */
 #define XTEN1 1
 /*#define INFO_OCTAVE_DISABLED 1*/
@@ -131,6 +131,7 @@ char rhythmdesignator[32]; /* [SS] 2011-08-19 */
 int retuning = 0; /* [SS] 2012-04-01 */
 int bend = 8192; /* [SS] 2012-04-01 */
 int comma53 = 0; /* [SS] 2014-01-12 */
+int silent = 0; /* [SS] 2014-10-16 */
 void init_p48toc53 (); /* [SS] 2014-01-12 */ 
 void convert_to_comma53 (char acc, int *midipitch, int* midibend);  
 
@@ -773,6 +774,7 @@ char **filename;
     } 
 
   if (getarg("-OCC",argc,argv) != -1) oldchordconvention=1;
+  if (getarg("-silent",argc,argv) != -1) silent = 1; /* [SS] 2014-10-16 */
 
   maxnotes = 500;
   /* allocate space for notes */
@@ -805,6 +807,7 @@ char **filename;
     printf("        -n <limit> set limit for length of filename stem\n");
     printf("        -RS use 3:1 instead of 2:1 for broken rhythms\n");
     printf("        -quiet suppress some common warnings\n");
+    printf("        -silent suppresses most messages\n");
     printf("        -Q default tempo (quarter notes/minute)\n");
     printf("        -NFNP don't process !p! or !f!-like fields\n");
     printf("        -NCOM suppress comments in output MIDI file\n");
@@ -2292,7 +2295,7 @@ char* s;
     if (pastheader && parts == -1) return; /* [SS] 2014-04-10 */
     if (pastheader) {
       if (((int)*p < 'A') || ((int)*p > 'Z')) {
-        event_error("Part must be one of A-Z");
+        if (!silent) event_error("Part must be one of A-Z");
         return;
       };
       if ((headerpartlabel == 1) && (part.st[0] == *p)) {
@@ -3747,7 +3750,7 @@ char* s;
     } else {
       /* Experimental feature supports "_ignored words" */
       if (strchr("_^<>@", (int)*p) == NULL) {
-        event_error("Guitar chord does not start with A-G or a-g");
+        if (!silent) event_error("Guitar chord does not start with A-G or a-g");
       };
       return;
     };
@@ -3775,7 +3778,7 @@ char* s;
       p = p + 1;
       p = get_accidental(p, &accidental);
       inversion = pitchof(note, accidental, 1, 0, 0) - middle_c;
-    } else {
+    } else if (!silent) {
       event_error(" / must be followed by A-G or a-g in gchord");
     };
   };
@@ -4173,7 +4176,7 @@ int j, xinchord,voiceno;
       /*printf("tied_num = %d done = %d inchord = %d\n",tied_num, done, inchord);*/
       place = place + 1;
     };
-    if (tietodo == 1) {
+    if (tietodo == 1 && !silent) {
       event_error("Could not find note to be tied");
     };
   };
@@ -5248,7 +5251,7 @@ static void finishfile()
     if (parts > -1) {
       addfeature(PART, ' ', 0, 0);
     };
-    if (headerpartlabel == 1) {
+    if (headerpartlabel == 1 && !silent) {
       event_error("P: field in header should go after K: field");
     };
     if (verbose > 1) {
@@ -5284,7 +5287,7 @@ static void finishfile()
       if ((fp = fopen(outname, "wb")) == NULL) {
         event_fatal_error("File open failed");
       };
-      printf("writing MIDI file %s\n", outname);
+      if (!silent) printf("writing MIDI file %s\n", outname);
       Mf_putc = myputc;
       Mf_writetrack = writetrack;
       header_time_num = time_num;
@@ -5315,7 +5318,7 @@ void event_blankline()
 /* blank line found in abc signifies the end of a tune */
 {
   if (dotune) {
-    print_voicecodes();
+    if (!silent) print_voicecodes();
     finishfile();
     parseroff();
     dotune = 0;

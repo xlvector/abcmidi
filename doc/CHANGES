@@ -10534,3 +10534,14 @@ note_effect3().
 September 28 2014
 
 Extended the maximum bendstring length to 50.
+
+
+October 16 2014
+
+Abc2midi: in some applications it may be desirable to suppresses
+all messages. A new option -silent was introduced to suppress the
+the other warnings and messages not handled by the -quiet option.
+eg.
+abc2midi nottingham.abc -silent -quiet
+produces almost not output except for the MIDI files.
+

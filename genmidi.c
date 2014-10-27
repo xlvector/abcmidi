@@ -90,6 +90,7 @@ extern int stressmodel; /* [SS] 2011-08-26 */
 extern int verbose;
 extern int quiet;
 extern int sf, mi;
+extern int silent; /* [SS] 2014-10-16 */
 
 extern int retuning,bend; /* [SS] 2012-04-01 */
 int drumbars;
@@ -651,7 +652,7 @@ int j;
   }
   while ((partno < parts) &&
          (part_start[partlabel] == -1)) {
-    event_error("Part not defined");
+    if (!silent) event_error("Part not defined");
     partno = partno + 1;
     if (partno < parts) {
       partlabel = (int)part.st[partno] - (int)'A';
@@ -2782,7 +2783,7 @@ int xtrack;
                char msg[100];
                sprintf(msg,"unequal notes in chord %d/%d versus %d/%d",
                   note_num,note_denom,num[j],denom[j]);
-               event_warning(msg);
+               if (!silent) event_warning(msg);
 	       num[j] = note_num;
                denom[j] = note_denom;
                }
@@ -3216,7 +3217,7 @@ int xtrack;
     };
     j = j + 1;
   };
-  if ((expect_repeat)&&(pass==1)) {
+  if ((expect_repeat)&&(pass==1) && !silent) {
     event_error("Missing :| at end of tune");
   };
   clearQ();

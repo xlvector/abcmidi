@@ -1,7 +1,7 @@
 abcMIDI :   abc <-> MIDI conversion utilities
 
 midi2abc version 2.94 January 05 2014
-abc2midi version 3.36 September 28 2014
+abc2midi version 3.37 October 16 2014
 abc2abc  version 1.75 September 08 2013
 yaps     version 1.56 November 04 2013
 abcmatch version 1.62 January 01 2014
@@ -246,6 +246,7 @@ Usage : abc2midi <abc file> [reference number] [-c] [-v] [-o filename]
         -n <limit> set limit for length of filename stem
         -RS use 3:1 instead of 2:1 for broken rhythms
         -quiet suppress some common warnings
+        -silent suppresses other messages
         -Q <tempo> in quarter notes/minute
         -NFNP ignore all dynamic indications (!f! !ff! !p! etc.)
         -NFER ignore fermata markings
