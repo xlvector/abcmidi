@@ -22,7 +22,7 @@
 /* yapstree.c - back-end for abc parser. */
 /* generates a data structure suitable for typeset music */
 
-#define VERSION "1.57 November 05 2013"
+#define VERSION "1.62 May 13 2015 yaps"
 #include <stdio.h>
 #ifdef USE_INDEX
 #define strchr index
@@ -1127,7 +1127,7 @@ char** filename;
     landscape = 0;
   };
   newscale = getarg("-s", argc, argv);
-  if ((newscale != -1) && (argc >= newscale)) {
+  if ((newscale != -1) && (argc >= newscale+1)) {  /* [SS] 2015-02-22 */
     setscaling(argv[newscale]);
   } else {
     setscaling("");
@@ -1320,6 +1320,18 @@ void event_acciaccatura()
 /* does nothing but outputs a / in toabc.c */
 return;
 }
+
+/* [SS] 2015-03-23 */
+void event_start_extended_overlay()
+{
+event_error("extended overlay not implemented in yaps");
+}
+
+void event_stop_extended_overlay()
+{
+event_error("extended overlay not implemented in yaps");
+}
+
 
 void event_split_voice()
 {
@@ -1723,6 +1735,13 @@ int continuation;
     };
   };
   freevstring(&syll);
+}
+
+/* [SS] 2014-08-16 */
+void appendfield (morewords)
+char *morewords;
+{
+printf("appendfield not implemented here\n");
 }
 
 void event_part(s)

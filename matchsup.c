@@ -449,6 +449,18 @@ void event_acciaccatura()
 return;
 }
 
+/* [SS] 2015-03-23 */
+void event_start_extended_overlay()
+{
+event_error("extended overlay not implemented in abcmatch");
+}
+
+void event_stop_extended_overlay()
+{
+event_error("extended overlay not implemented in abcmatch");
+}
+
+
 void event_split_voice()
 {
 }
@@ -653,6 +665,13 @@ void event_words(p, continuation)
 char* p;
 int continuation;
 {
+}
+
+/* [SS] 2014-08-16 */
+void appendfield (morewords)
+char *morewords;
+{
+printf("appendfield not implemented here\n");
 }
 
 

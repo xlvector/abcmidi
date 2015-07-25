@@ -2,11 +2,11 @@
 .SH NAME
 \fBabc2midi\fP \- converts abc file to MIDI file(s)
 .SH SYNOPSIS
-abc2midi \fIinfile\fP [\fIrefnum\fP] [-c] [-v] [-ver] [-t] [-n limit] [-RS] [-quiet] [-Q tempo] [-NFNP] [-NFER] [-NGRA] [-STFW] [-OCC] [-NCOM] [-HARP] [-BF] [-TT] [-o outfile] -CSM [filename]
+abc2midi \fIinfile\fP [\fIrefnum\fP] [\-c] [\-v] [\-ver] [\-t] [\-n limit] [\-RS] [\-quiet] [\-silent] [\-Q tempo] [\-NFNP] [\-NFER] [\-NGRA] [\-STFW] [\-OCC] [\-NCOM] [\-HARP] [\-BF] [\-TT] [\-o outfile] \-CSM [filename]
 .SH DESCRIPTION
  The default action is to write a MIDI file for each abc tune
  with the filename <stem>N.mid, where <stem> is the filestem
- of the abc file and N is the tune reference number. If the -o
+ of the abc file and N is the tune reference number. If the \-o
  option is used, only one file is written. This is the tune
  specified by the reference number or, if no reference number
  is given, the first tune in the file.
@@ -31,7 +31,10 @@ selects filenames derived from tune titles
 use 3:1 instead of 2:1 for broken rhythms
 .TP
 .B -quiet
-Suppresses some commong warnings.
+Suppresses some common warnings.
+.TP
+.B -silent
+Supresses other messages.
 .TP
 .B -n \fI X\fP
 limits the length of the file name stem to X characters
@@ -171,7 +174,7 @@ c described above. The instructions !crescendo(! and !crescendo)!
 are equivalent to inserting a %%MIDI beatmod 15 whereever they
 occur. (Alternatively you can use !<(! and !<)!.) Similarly the
 instructions !diminuendo(! and !diminuendo)! are equivalent
-to %%MIDI beatmod -15.
+to %%MIDI beatmod \-15.
 
 .PP
 %%MIDI deltaloudness n
@@ -313,7 +316,7 @@ You can use any combination of the gchord codes,
 %%MIDI chordprog n
 .PP
 Sets the MIDI instrument for the chords to be n. If the command
-includes the string octave=n where n is a number between -2 and 2
+includes the string octave=n where n is a number between \-2 and 2
 inclusive, then this will shift the pitch of the instrument by n
 octaves. For example %%MIDI chordprog 10 octave=1.)
 
@@ -321,9 +324,9 @@ octaves. For example %%MIDI chordprog 10 octave=1.)
 %%MIDI bassprog n
 .PP
 Sets the MIDI instrument for the bass notes to be n. If the command
-includes the string octave=n where n is a number between -2 and 2
+includes the string octave=n where n is a number between \-2 and 2
 inclusive, then this will shift the pitch of the instrument by n
-octaves. For example %%MIDI bassprog 10 octave=-1.)
+octaves. For example %%MIDI bassprog 10 octave=\-1.)
 .PP
 %%MIDI chordvol n
 .PP
@@ -353,7 +356,7 @@ by the %%MIDI drone command described below.
 .PP
 %%MIDI droneoff
 .PP
-Turns off the continous drone.
+Turns off the continuous drone.
 .PP
 %%MIDI drone n1 n2 n3 n4 n5
 .PP
@@ -482,7 +485,7 @@ Model 2 modifies both the onset and ending of each note
 allowing a musical beat to expand or contract in time. However,
 the length of a musical measure should be preserved. Note
 if you using model 2, which the current default, you must
-include -BF as one of the runtime parameters of abc2midi.
+include \-BF as one of the runtime parameters of abc2midi.
 .PP
 The model divides a bar into equal segments. For each segment,
 a loudness or MIDI velocity is specified and a duration multiplier

@@ -55,6 +55,11 @@ extern int totalnotedelay; /* from genmidi.c [SS] */
 extern int notedelay;      /* from genmidi.c [SS] */
 extern int bendvelocity;   /* from genmidi.c [SS] */
 extern int bendacceleration; /* from genmidi.c [SS] */
+extern int bendstate; /* from genmidi.c [SS] */
+/* [SS] 2014-09-10 */
+extern int benddata[50]; /* from genmidi.c [SS] 2014-09-10 */
+extern int bendnvals;
+
 
 /* routines to handle note queue */
 
@@ -258,7 +263,7 @@ void note_effect() {
   int i;
   int velocity;
   delta8 = delta_time/8;
-  pitchbend = 8192; 
+  pitchbend = bendstate;  /* [SS] 2014-09-09 */
   velocity = bendvelocity;
   for (i=0;i<8;i++) {
      pitchbend = pitchbend + velocity;
@@ -272,11 +277,63 @@ void note_effect() {
      delta_time -= delta8;
      }
   midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
-  pitchbend = 8192;
+  pitchbend = bendstate; /* [SS] 2014-09-22 */
   data[0] = (char) (pitchbend&0x7f);
   data[1] = (char) ((pitchbend>>7)&0x7f);
   mf_write_midi_event(delta_time,pitch_wheel,Q[Qhead].chan,data,2);
   }
+
+/* [SS] 2014-09-11 */
+void note_effect2() {
+  int delta;
+  int pitchbend;
+  char data[2];
+  int i;
+  delta = delta_time/bendnvals;
+  pitchbend = bendstate;  /* [SS] 2014-09-09 */
+  for (i=0;i<bendnvals;i++) {
+     pitchbend = pitchbend + benddata[i];
+     if (pitchbend > 16383) pitchbend = 16383;
+     if (pitchbend < 0) pitchbend = 0;
+ 
+     data[0] = (char) (pitchbend&0x7f);
+     data[1] = (char) ((pitchbend>>7)&0x7f);
+     if (i == 0) /* [SS] 2014-09-24 */
+       mf_write_midi_event(0,pitch_wheel,Q[Qhead].chan,data,2);
+     else {
+       mf_write_midi_event(delta,pitch_wheel,Q[Qhead].chan,data,2);
+       delta_time -= delta;
+       }
+     }
+  midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
+  delta_time = 0; /* [SS] 2014-09-24 */
+  pitchbend = bendstate; /* [SS] 2014-09-09 */
+  data[0] = (char) (pitchbend&0x7f);
+  data[1] = (char) ((pitchbend>>7)&0x7f);
+  mf_write_midi_event(delta_time,pitch_wheel,Q[Qhead].chan,data,2);
+  }
+
+/* [SS] 2014-09-22 */
+void note_effect3() {
+  int delta;
+  int pitchbend;
+  char data[2];
+  delta =0;
+  pitchbend = bendstate; 
+  pitchbend = pitchbend + benddata[0];
+  if (pitchbend > 16383) pitchbend = 16383;
+  if (pitchbend < 0) pitchbend = 0;
+  data[0] = (char) (pitchbend&0x7f);
+  data[1] = (char) ((pitchbend>>7)&0x7f);
+  mf_write_midi_event(delta,pitch_wheel,Q[Qhead].chan,data,2);
+  midi_noteoff(delta_time, Q[Qhead].pitch, Q[Qhead].chan);
+  pitchbend = bendstate;
+  data[0] = (char) (pitchbend&0x7f);
+  data[1] = (char) ((pitchbend>>7)&0x7f);
+  mf_write_midi_event(delta,pitch_wheel,Q[Qhead].chan,data,2); /* [SS] 2014-09-23 */
+  } 
+
+
 
 
 /* timestep is called by delay() in genmidi.c typically at the */
@@ -322,8 +379,20 @@ int atend;
           tracklen = tracklen + delta_time;
           delta_time = 0L;}
        else {
-          note_effect();  /* [SS] 2012-12-11 */
-          tracklen = tracklen + delta_time;
+          tracklen = tracklen + delta_time; /* [SS] 2015-06-08 */
+          switch (Q[Qhead].effect) { /* [SS] 2014-09-22 */
+             case 1:
+                note_effect();
+                break;
+   
+             case 2:
+                note_effect2();
+                break;
+
+             case 3:
+                note_effect3();
+                break;
+           } 
           delta_time = 0L;}
        };
 

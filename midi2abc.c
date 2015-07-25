@@ -46,7 +46,7 @@
  * based on public domain 'midifilelib' package.
  */
 
-#define VERSION "2.94 January 05 2014"
+#define VERSION "2.95 February 22 2015"
 #define SPLITCODE
 
 /* Microsoft Visual C++ Version 6.0 or higher */
@@ -3148,7 +3148,7 @@ int argc;
     tsig_set = 0;
   };
   arg = getarg("-Q", argc, argv);
-  if (arg != -1) {
+  if (arg != -1 && arg >= argc+1) { /* [SS] 2015-02-22 */
     Qval = readnum(argv[arg]);
   }
   else {

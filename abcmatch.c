@@ -49,7 +49,7 @@ Matching:
 
 
 
-#define VERSION "1.62 January 01 2014"
+#define VERSION "1.67 May 13 2015 abcmatch"
 #include <stdio.h>
 #include <stdlib.h>
 #include "abc.h"
@@ -1231,7 +1231,7 @@ event_init (argc, argv, filename)
       verbose = 0;
     };
   j = getarg ("-r", argc, argv);
-  if (j != -1)
+  if (j != -1 && argc >= j+1)  /* [SS] 2015-02-22 */
     sscanf (argv[j], "%d", &resolution);
   if (getarg ("-a", argc, argv) != -1)
     anymode = 1;

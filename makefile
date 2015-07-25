@@ -33,7 +33,7 @@
 
 CC=gcc
 #CFLAGS=-DANSILIBS -O2 
-CFLAGS=-DANSILIBS -g 
+CFLAGS+=-DANSILIBS -g 
 LNK=gcc
 INSTALL=install
 
@@ -47,27 +47,27 @@ mandir=share/man/man1
 all : abc2midi midi2abc abc2abc mftext yaps midicopy abcmatch
 
 abc2midi : parseabc.o store.o genmidi.o midifile.o queues.o parser2.o stresspat.o
-	$(LNK) -o abc2midi parseabc.o store.o genmidi.o queues.o \
+	$(LNK) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o abc2midi parseabc.o store.o genmidi.o queues.o \
 	parser2.o midifile.o stresspat.o -lm
 
 abc2abc : parseabc.o toabc.o
-	$(LNK) -o abc2abc parseabc.o toabc.o
+	$(LNK) $(LDFLAGS) -o abc2abc parseabc.o toabc.o
 
 midi2abc : midifile.o midi2abc.o 
-	$(LNK) midifile.o midi2abc.o -o midi2abc
+	$(LNK) $(LDFLAGS) midifile.o midi2abc.o -o midi2abc
 
 mftext : midifile.o mftext.o crack.o
-	$(LNK) midifile.o mftext.o crack.o -o mftext
+	$(LNK) $(LDFLAGS) midifile.o mftext.o crack.o -o mftext
 
 yaps : parseabc.o yapstree.o drawtune.o debug.o pslib.o position.o parser2.o
-	$(LNK) -o yaps parseabc.o yapstree.o drawtune.o debug.o \
+	$(LNK) $(LDFLAGS) -o yaps parseabc.o yapstree.o drawtune.o debug.o \
 	position.o pslib.o parser2.o -o yaps
 
 midicopy : midicopy.o
-	$(LNK) -o midicopy midicopy.o
+	$(LNK) $(LDFLAGS) -o midicopy midicopy.o
 
 abcmatch : abcmatch.o matchsup.o parseabc.o
-	$(LNK) abcmatch.o matchsup.o parseabc.o -o abcmatch
+	$(LNK) $(LDFLAGS) abcmatch.o matchsup.o parseabc.o -o abcmatch
 
 parseabc.o : parseabc.c abc.h parseabc.h
 
@@ -112,7 +112,7 @@ debug.o: debug.c structs.h abc.h
 matchsup.o : matchsup.c abc.h parseabc.h parser2.h
 
 clean :
-	rm *.o ${binaries}
+	-rm *.o ${binaries}
 
 install: abc2midi midi2abc abc2abc mftext midicopy yaps abcmatch
 	test -d $(DESTDIR)${prefix}/${bindir} || mkdir -p $(DESTDIR)${prefix}/${bindir}

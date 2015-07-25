@@ -9,7 +9,7 @@ midicopy \- Copy selected track, channel, time interval of a MIDI file to anothe
     [\fB-fromsec %f\fP \fIn (in seconds)\fP] [\fB-tosec\fP \fIn (in seconds)\fP]\
     [\fB-frombeat %f\fP \fIn (in beats)\fP] [\fB-tosec\fP \fIn (in beats)\fP]\
     [\fB-replace\fP \fItrk,loc,val\fP] [\fB-tempo %n\fP] [\fB-speed %f\fP]\
-    [\fB-drumfocus\fP \fIn \fIm\fP] [\fB -mutenodrum [%d]\fP]\
+    [\fB-drumfocus\fP \fIn \fIm\fP] [\fB-mutenodrum [%d]\fP]\
     [\fB-setdrumloudness\fP \fIn \fIm\fP]\
  \fIinput.mid output.mid\fP
 .SH "DESCRIPTION"
@@ -17,7 +17,7 @@ midicopy \- Copy selected track, channel, time interval of a MIDI file to anothe
 .B midicopy
 is used to copy part of a MIDI file to another MIDI file. You can select
 a particular time interval, particular channels, and particular tracks
-or any combinations. If one or both of the run time parameters -from or -to
+or any combinations. If one or both of the run time parameters \-from or \-to
 are included, the program returns the playing time in seconds of the
 output file.  Midicopy was developed by Seymour Shlien from the
 midifilelib distribution available from
@@ -37,7 +37,7 @@ parameter.
 .TP
 .B -xtrks n1,n2, etc
 Lists the tracks to exclude from copying. All other tracks are copied.
-This option does not work in combination with -trks.
+This option does not work in combination with \-trks.
 .TP
 .B -chns n
 Like above, it specifies the MIDI channels to be copied. By default
@@ -67,10 +67,10 @@ in seconds.
 .TP
 .B -tosec n
 Stops copying all events after time n in seconds. These two
-options (-fromsec and -tosec) do not work accurately if the
+options (\-fromsec and \-tosec) do not work accurately if the
 MIDI file has more than one tempo command. Only the first
 one is used for converting seconds into MIDI pulse units.
-It is therefore preferable to use the -from and -to options.
+It is therefore preferable to use the \-from and \-to options.
 .TP
 .B -replace trk,loc,val
 This option should be used alone. Midicopy will copy the entire

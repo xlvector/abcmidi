@@ -21,7 +21,7 @@
 
 /* back-end for outputting (possibly modified) abc */
 
-#define VERSION "1.74 April 21 2013"
+#define VERSION "1.81 July 02 2015 abc2abc"
 
 /* for Microsoft Visual C++ 6.0 or higher */
 #ifdef _MSC_VER
@@ -485,6 +485,7 @@ char *voices_string;
   char *s = voices_string;
 
   selected_voices = 0;
+  if (voices_string == 0x0) return; /* [SS] 2015-02-22 */
   do {
     int v = readnump(&s);
 
@@ -1119,6 +1120,15 @@ int continuation;
     event_field('w', afield.st);
   };
 }
+
+/* [SS] 2014-09-07 */
+void appendfield (morewords)
+char *morewords;
+{
+emit_string("+: ");
+emit_string(morewords);
+}
+
 
 void event_part(s)
 char* s;
@@ -2447,6 +2457,19 @@ void event_acciaccatura()
 /* abcm2ps compatability feature [SS] 2005-03-28 */
 emit_string("/");
 }
+
+/* [SS] 2015-03-23 */
+void event_start_extended_overlay()
+{
+event_error("extended overlay not implemented in abc2abc");
+}
+
+void event_stop_extended_overlay()
+{
+event_error("extended overlay not implemented in abc2abc");
+}
+
+
 
 void event_split_voice ()
 {

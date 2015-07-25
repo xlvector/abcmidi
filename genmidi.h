@@ -27,6 +27,7 @@ extern void progress_sequence();
 /* introduced 2010-02-01 (feb 01) [SS] */
 struct trackstruct {enum {NOTES, WORDS, NOTEWORDS, GCHORDS, DRUMS, DRONE} tracktype;
                     int voicenum;
+                    int midichannel; /* [SS] 2015-03-24 */
                    };
 
 

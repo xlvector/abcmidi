@@ -37,9 +37,16 @@
 
 #define SIZE_ABBREVIATIONS ('Z' - 'H' + 1)
 
+
+#ifdef _MSC_VER
+#define snprintf _snprintf_s
+#endif
+
+
 #ifdef _MSC_VER
 #define ANSILIBS
 #define casecmp stricmp
+#define _CRT_SECURE_NO_WARNINGS
 #else
 #define casecmp strcasecmp
 #endif
@@ -79,7 +86,9 @@ char decorations[] = ".MLRH~Tuv";
 char *abbreviation[SIZE_ABBREVIATIONS];
 
 int voicecodes = 0;
-char voicecode[16][30];		/*for interpreting V: string */
+/* [SS] 2015-03-16 allow 24 voices */
+/*char voicecode[16][30];       for interpreting V: string */
+char voicecode[24][30];		/*for interpreting V: string */
 
 int decorators_passback[DECSIZE];
 /* this global array is linked as an external to store.c and 
@@ -103,6 +112,8 @@ int microtone;			/* [SS] 2014-01-19 */
 
 extern programname fileprogram;
 int oldchordconvention = 0;
+char * abcversion = "2.0"; /* [SS] 2014-08-11 */
+char lastfieldcmd = ' '; /* [SS] 2014-08-15 */
 
 char *mode[10] = { "maj", "min", "m",
   "aeo", "loc", "ion", "dor", "phr", "lyd", "mix"
@@ -144,6 +155,17 @@ addstring (s)
   strcpy (p, s);
   return (p);
 }
+
+/* [SS] 2014-08-16 */
+char * concatenatestring(s1,s2)
+   char * s1;
+   char * s2;
+{  char *p;
+  p = (char *) checkmalloc (strlen(s1) + strlen(s2) + 1);
+  snprintf(p,sizeof p, "%s%s",s1,s2);
+  return p;
+}
+
 
 void
 initvstring (s)
@@ -563,26 +585,34 @@ isclef (s, gotoctave, octave, strict)
   if (strncmp (s, "treble", 6) == 0)
     {
       gotclef = 1;
-      *gotoctave = 1;		/* [SS] 2011-12-19 */
-      *octave = 0;
       if (fileprogram == ABC2MIDI && *gotoctave != 1 && *octave != 1)
+        {
+        /* [SS] 2015-07-02 */
 	event_warning ("clef= is overriding octave= setting");
+        *gotoctave = 1;		/* [SS] 2011-12-19 */
+        *octave = 0;
+        }
     };
   if (strncmp (s, "treble+8", 8) == 0)
     {
       gotclef = 1;
       if (fileprogram == ABC2MIDI && *gotoctave != 1 && *octave != 1)
-	event_warning ("clef= is overriding octave= setting");
-      *gotoctave = 1;
-      *octave = 1;
+        {
+	event_warning ("clef= is overriding octave= setting"); 
+        /* [SS] 2015-07-02 */
+        *gotoctave = 1;
+        *octave = 1;
+        }
     };
   if (strncmp (s, "treble-8", 8) == 0)
     {
       gotclef = 1;
       if (fileprogram == ABC2MIDI && *gotoctave == 1 && *octave != -1)
+        {
 	event_warning ("clef= is overriding octave= setting");
-      *gotoctave = 1;
-      *octave = -1;
+        *gotoctave = 1;
+        *octave = -1;
+        }
     };
   if (strncmp (s, "baritone", 8) == 0)
     {
@@ -595,10 +625,11 @@ isclef (s, gotoctave, octave, strict)
   if (strncmp (s, "tenor-8", 7) == 0)
     {
       gotclef = 1;
-      if (fileprogram == ABC2MIDI && *gotoctave == 1 && *octave != -1)
+      if (fileprogram == ABC2MIDI && *gotoctave == 1 && *octave != -1) {
 	event_warning ("clef= is overriding octave= setting");
-      *gotoctave = 1;
-      *octave = -1;
+        *gotoctave = 1;
+        *octave = -1;
+        }
     };
   if (strncmp (s, "alto", 4) == 0)
     {
@@ -648,6 +679,8 @@ isclef (s, gotoctave, octave, strict)
   return (gotclef);
 }
 
+
+
 char *
 readword (word, s)
 /* part of parsekey, extracts word from input line */
@@ -662,11 +695,12 @@ readword (word, s)
 
   p = s;
   i = 0;
+  /* [SS] 2015-04-08 */
   while ((*p != '\0') && (*p != ' ') && (*p != '\t') && ((i == 0) ||
-							 ((*p != '=')
-							  && (*p != '^')
-							  && (*p != '_'))))
+							 ((*p != '='))))
     {
+    if (i >1 && *p == '^') break; /* allow for double sharps and flats */
+    if (i >1 && *p == '_') break;
       if (i < 29)
 	{
 	  word[i] = *p;
@@ -701,7 +735,7 @@ void
 init_voicecode ()
 {
   int i;
-  for (i = 0; i < 16; i++)
+  for (i = 0; i < 24; i++) /* [SS} 2015-03-15 */
     voicecode[i][0] = 0;
   voicecodes = 0;
 }
@@ -757,7 +791,7 @@ interpret_voicestring (char *s)
   for (i = 0; i < voicecodes; i++)
     if (stringcmp (code, voicecode[i]) == 0)
       return (i + 1);
-  if ((voicecodes + 1) > 15)
+  if ((voicecodes + 1) > 23) /* [SS] 2015-03-16 */
     return -1;
   strcpy (voicecode[voicecodes], code);
   voicecodes++;
@@ -1260,10 +1294,10 @@ parsekey (str)
 	      parsed = 1;
 	      j = (int) c - 'A';
               if (j > 7) j = (int) c - 'a';
-              if (j > 7 || j < 0) {printf("invalid j = %d\n"); exit(-1);}
+              if (j > 7 || j < 0) {printf("invalid j = %d\n",j); exit(-1);}
 	      if (word[0] == '_')
 		a = -a;
-	      /*printf("a/b = %d/%d for %c\n",a,b,c); */
+	      /*printf("a/b = %d/%d for %c\n",a,b,c);*/ 
 	      modmap[j] = word[0];
 	      modmicrotone[j].num = a;
 	      modmicrotone[j].denom = b;
@@ -1360,7 +1394,11 @@ parsevoice (s)
       if (!parsed)
 	parsed = parseother (&s, word, &vparams.gotother, vparams.other, V_STRLEN);	/* [SS] 2011-04-18 */
     }
-  if (cgotoctave)
+  /* [SS] 2015-05-13 allow octave= to change the clef= octave setting */
+  /* cgotoctave may be set to 1 by a clef=. vparams.gotoctave is set  */
+  /* by octave= */
+
+  if (cgotoctave && vparams.gotoctave == 0)
     {
       vparams.gotoctave = 1;
       vparams.octave = coctave;
@@ -1655,12 +1693,33 @@ readstr (out, in, limit)
      char out[];
      char **in;
      int limit;
-/* copy across alphanumeric string */
+/* copy across alpha string */
 {
   int i;
 
   i = 0;
   while ((isalpha (**in)) && (i < limit - 1))
+    {
+      out[i] = **in;
+      i = i + 1;
+      *in = *in + 1;
+    };
+  out[i] = '\0';
+}
+
+/* [SS] 2015-06-01 required for parse_mididef() in store.c */
+/* Just like readstr but also allows anything except white space */
+void
+readaln (out, in, limit)
+     char out[];
+     char **in;
+     int limit;
+/* copy across alphanumeric string */
+{
+  int i;
+
+  i = 0;
+  while ((!isspace (**in)) && (**in) != 0 && (i < limit - 1))
     {
       out[i] = **in;
       i = i + 1;
@@ -1676,7 +1735,9 @@ parse_precomment (s)
 {
   char package[40];
   char *p;
+  int success;
 
+  success = sscanf (s, "%%abc-version %s", &abcversion); /* [SS] 2014-08-11 */
   if (*s == '%')
     {
       p = s + 1;
@@ -1773,6 +1834,14 @@ parse_tempo (place)
   event_tempo (n, a, b, relative, pre_string, post_string);
 }
 
+
+void append_fieldcmd (key, s)  /* [SS] 2014-08-15 */
+char key;
+char *s;
+{
+appendfield(s);
+} 
+
 void
 preparse_words (s)
      char *s;
@@ -1796,6 +1865,8 @@ preparse_words (s)
     }
   else
     {
+      /* [SS] 2014-08-14 */
+      event_warning ("\\n continuation no longer supported in w: line");
       continuation = 1;
       /* remove continuation character */
       *(s + l) = '\0';
@@ -1902,7 +1973,8 @@ parsefield (key, field)
   if (parsing == 0)
     return;
 
-  if ((inbody) && (strchr ("EIKLMPQTVdswW", key) == NULL))
+  /*if ((inbody) && (strchr ("EIKLMPQTVdswW", key) == NULL)) [SS] 2014-08-15 */
+  if ((inbody) && (strchr ("EIKLMPQTVdrswW+", key) == NULL)) /* [SS] 2015-05-11 */
     {
       event_error ("Field not allowed in tune body");
     };
@@ -2073,6 +2145,10 @@ parsefield (key, field)
     case 's':
       event_field (key, place);	/* [SS] 2010-02-23 */
       break;
+    case '+':
+      if (lastfieldcmd == 'w') 
+          append_fieldcmd (key, place); /*[SS] 2014-08-15 */
+      break; /* [SS] 2014-09-07 */
     default:
       event_field (key, place);
     };
@@ -2080,6 +2156,8 @@ parsefield (key, field)
     {
       parse_precomment (comment);
     };
+  if (key == 'w') lastfieldcmd = 'w'; /* [SS] 2014-08-15 */
+  else lastfieldcmd = ' ';  /* [SS[ 2014-08-15 */
 }
 
 char *
@@ -2172,6 +2250,13 @@ parsemusic (field)
   while (*p != '\0')
     {
       lineposition = p - linestart;	/* [SS] 2011-07-18 */
+
+      if (*p == '.' && *(p+1) == '(') {  /* [SS] 2015-04-28 dotted slur */
+          p = p+1;
+          event_sluron (1);
+          p = p+1;
+          }
+
       if (((*p >= 'a') && (*p <= 'g')) || ((*p >= 'A') && (*p <= 'G')) ||
 	  (strchr ("_^=", *p) != NULL) || (strchr (decorations, *p) != NULL))
 	{
@@ -2273,9 +2358,14 @@ parsemusic (field)
 		  };
 		if (t == 0)
 		  {
-		    event_sluron (1);
+                    if (*p == '&') {
+                       p = p+1;
+                       event_start_extended_overlay(); /* [SS] 2015-03-23 */
+                       }
+                    else
+		       event_sluron (1);
 		  }
-		else
+		else  /* t != 0 */
 		  {
 		    event_tuple (t, q, r);
 		  };
@@ -2299,20 +2389,12 @@ parsemusic (field)
 	      p = p + 1;
 	      switch (*p)
 		{
-/* following lines are now redundant */
-/*
-        case '1':
-          p = p + 1;
-          event_rep1();
-          break;
-        case '2':
-          p = p + 1;
-          event_rep2();
-          break;
-*/
 		case '|':
 		  p = p + 1;
 		  event_bar (THICK_THIN, "");
+		  if (*p == ':')   /* [SS] 2015-04-13 */
+		      event_bar (BAR_REP, "");
+		      p = p + 1;
 		  break;
 		default:
 		  if (isdigit (*p))
@@ -2367,6 +2449,7 @@ parsemusic (field)
 		    decorators_passback[i] = 0;
 		  }
 		event_rest (decorators, n, m, 1);
+                decorators[FERMATA] = 0;  /* [SS] 2014-11-17 */
 		break;
 	      };
 /*  regular rest */
@@ -2385,6 +2468,7 @@ parsemusic (field)
 		    decorators_passback[i] = 0;
 		  }
 		event_rest (decorators, n, m, 0);
+                decorators[FERMATA] = 0;  /* [SS] 2014-11-17 */
 		break;
 	      };
 	    case 'y':		/* used by Barfly and abcm2ps to put space */
@@ -2415,6 +2499,7 @@ parsemusic (field)
 		      ("X or Z must be followed by a whole integer");
 		  };
 		event_mrest (n, m);
+                decorators[FERMATA] = 0;  /* [SS] 2014-11-17 */
 		break;
 	      };
 	    case '>':
@@ -2563,8 +2648,14 @@ parsemusic (field)
 	      break;
 	    case '&':
 	      p = p + 1;
-	      event_split_voice ();
-	      break;
+              if (*p == ')') {
+                 p = p + 1;
+                 event_stop_extended_overlay(); /* [SS] 2015-03-23 */
+                 break;
+                 }
+              else
+	        event_split_voice ();
+	        break;
 	    default:
 	      {
 		char msg[40];
@@ -2626,7 +2717,8 @@ parseline (line)
 	event_linebreak ();
       return;
     };
-  if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ", *p) != NULL)
+  /*if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ", *p) != NULL) [SS] 2014-08-15 */
+  if (strchr ("ABCDEFGHIKLMNOPQRSTUVdwsWXZ+", *p) != NULL)
     {
       q = p + 1;
       skipspace (&q);

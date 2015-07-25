@@ -47,7 +47,7 @@ Don't report errors.
 .TP
 .BI \-t " n"
 Transpose tune by \fIn\fP semitones. This function will also
-work with K: none or one of -nokeys or -nokeyf.
+work with K: none or one of \-nokeys or \-nokeyf.
 If a voice is assigned to channel 10 (drum channel) using a
 %%MIDI channel 10
 command, then this voice is never transposed.
@@ -97,13 +97,13 @@ be placed wherever they are needed.
 .TP
 .B \-usekey " sf
 This will force abc2abc to output the notes in the key signature
-keys[sf] where sf specifies the number of flats (-negative) or 
+keys[sf] where sf specifies the number of flats (\-negative) or 
 sharps (+positive) in the key signature. It is a number between
--5 and +5 inclusive.
+\-5 and +5 inclusive.
 .PP
 * Normally abc2abc will convert the deprecated notation for
 decorations (eg. !ppp!) to the abc version 2.0 draft standard (eg. +ppp+).
-If you do not wish to change to this standard include the -OCC flag.
+If you do not wish to change to this standard include the \-OCC flag.
 
 .SH "SEE ALSO"
 .IR abcmtex "(1), " abc2midi "(1), " midi2abc "(1), " mftext "(1)"
