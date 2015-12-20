@@ -50,8 +50,8 @@ VPATH = @srcdir@
 bindir = @bindir@
 libdir = @libdir@
 datadir = @datarootdir@
-docdir = @prefix@/doc
-mandir=@mandir@/man1
+docdir = @datarootdir@/doc/abcmidi
+mandir = @datarootdir@/man/man1
 
 binaries=abc2midi midi2abc abc2abc mftext yaps midicopy abcmatch
 
@@ -140,17 +140,35 @@ clean :
 	rm *.o ${binaries}
 
 install: abc2midi midi2abc abc2abc mftext midicopy yaps abcmatch
-	test -d $(DESTDIR)${prefix}/${bindir} || mkdir -p $(DESTDIR)${prefix}/${bindir}
-	$(INSTALL) -m 755 ${binaries} $(DESTDIR)${prefix}/${bindir}
+	$(INSTALL) -d $(DESTDIR)$(bindir)
+	$(INSTALL) -m 755 ${binaries} $(DESTDIR)$(bindir)
 
 	# install documentation
-	test -d $(DESTDIR)${PREFIX}/share/doc/abcmidi || mkdir -p $(DESTDIR)${prefix}/${docdir}
-	$(INSTALL) -m 644 doc/*.txt $(DESTDIR)${prefix}/${docdir}
-	$(INSTALL) -m 644 doc/AUTHORS $(DESTDIR)${prefix}/${docdir}
-	$(INSTALL) -m 644 doc/CHANGES $(DESTDIR)${prefix}/${docdir}
-	$(INSTALL) -m 644 VERSION $(DESTDIR)${prefix}/${docdir}
+	$(INSTALL) -d $(DESTDIR)${docdir}
+	$(INSTALL)  -m 644 doc/*.txt $(DESTDIR)$(docdir)
+	$(INSTALL)  -m 644 doc/AUTHORS $(DESTDIR)$(docdir)
+	$(INSTALL)  -m 644 doc/CHANGES $(DESTDIR)$(docdir)
+	$(INSTALL)  -m 644 VERSION $(DESTDIR)$(docdir)
 
 	# install manpages
-	test -d $(DESTDIR)${prefix}/${mandir} || mkdir -p $(DESTDIR)${prefix}/${mandir};
-	$(INSTALL) -m 644 doc/*.1 $(DESTDIR)${prefix}/${mandir}
+	$(INSTALL)  -d $(DESTDIR)${mandir}
+	$(INSTALL)  -m 644 doc/*.1 $(DESTDIR)$(mandir)
+
+
+uninstall:
+	echo "uninstalling...";
+	#rm -f $(DESTDIR)$(bindir)/$(binaries)
+	rm -f $(DESTDIR)$(bindir)/abc2midi
+	rm -f $(DESTDIR)$(bindir)/abc2abc
+	rm -f $(DESTDIR)$(bindir)/yaps
+	rm -f $(DESTDIR)$(bindir)/midi2abc
+	rm -f $(DESTDIR)$(bindir)/mftext
+	rm -f $(DESTDIR)$(bindir)/abcmatch
+	rm -f $(DESTDIR)$(bindir)/midicopy
+	rm -f $(DESTDIR)$(docdir)/*.txt
+	rm -f $(DESTDIR)$(docdir)/AUTHORS
+	rm -f $(DESTDIR)$(docdir)/CHANGES
+	rm -f $(DESTDIR)$(docdir)/VERSION
+	rm -f $(DESTDIR)$(mandir)/*.1
+	rmdir $(DESTDIR)$(docdir)
 

@@ -49,9 +49,10 @@ Matching:
 
 
 
-#define VERSION "1.67 May 13 2015 abcmatch"
+#define VERSION "1.70 November 15 2015 abcmatch"
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include "abc.h"
 #include "parseabc.h"
 
@@ -194,7 +195,7 @@ make_note_representation (int *nnotes, int *nbars, int maxnotes, int maxbars,
 */
 {
   float fract;
-  int i,j;
+  int i;
   int skip_rests, multiplier, inchord, ingrace;
   int maxpitch;
   *nnotes = 0;
@@ -337,7 +338,7 @@ quantize5 (int pitch)
   return 0;
 }
 
-quantize7(int pitch)
+int quantize7(int pitch)
 {
 if (pitch < -4)
    return -3;
@@ -602,7 +603,7 @@ make_bar_image (int bar_number, int resolution,
 void
 print_bars (int mbar_number, int ibar_number)
 {
-  int i, notes;
+  int i;
   int ioffset, moffset;
   ioffset = ibarlineptr[ibar_number];
   moffset = tpbarlineptr[mbar_number];
@@ -620,8 +621,8 @@ print_bars (int mbar_number, int ibar_number)
 #define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
  
 int levenshtein(int *s1, int *s2, int s1len, int s2len) {
-    unsigned int  x, y, lastdiag, olddiag;
-    unsigned int column[33];
+    int  x, y, lastdiag, olddiag; /* [SS] 2015-10-08 removed unsigned */
+    int column[33];
     for (y = 1; y <= s1len; y++)
         column[y] = y;
     for (x = 1; x <= s2len; x++) {
@@ -1133,6 +1134,7 @@ for (i=0;i<300;i++)
 return count;
 }  
 
+void startfile(); /* links with matchsup.c */
 
 int
 analyze_abc_file (char *filename)
@@ -1391,7 +1393,7 @@ main (argc, argv)
      char *argv[];
 {
   char *filename;
-  int i, j;
+  int i;
   int ikey, mkey;
   int moffset;
   int transpose;

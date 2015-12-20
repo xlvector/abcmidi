@@ -77,7 +77,7 @@ char *s;
   fprintf(stderr,"Error: %s\n",s);
 }
 
-prtime()
+void prtime()
 {
     if(SECONDS)
   printf("Time=%f   ",mf_ticks2sec(Mf_currtime,division,tempo));
@@ -86,6 +86,7 @@ prtime()
 }
 
 void txt_header(format,ntrks,ldivision)
+int format, ntrks, ldivision;
 {
         division = ldivision; 
   printf("Header format=%d ntrks=%d division=%d\n",format,ntrks,division);
@@ -102,48 +103,57 @@ void txt_trackend()
 }
 
 void txt_noteon(chan,pitch,vol)
+int chan, pitch, vol;
 {
   prtime();
   printf("Note on, chan=%d pitch=%d vol=%d\n",chan+1,pitch,vol);
 }
 
 void txt_noteoff(chan,pitch,vol)
+int chan, pitch, vol;
 {
   prtime();
   printf("Note off, chan=%d pitch=%d vol=%d\n",chan+1,pitch,vol);
 }
 
 void txt_pressure(chan,pitch,press)
+int chan, pitch,press;
 {
   prtime();
   printf("Pressure, chan=%d pitch=%d press=%d\n",chan+1,pitch,press);
 }
 
 void txt_parameter(chan,control,value)
+int chan, control, value;
 {
   prtime();
   printf("Parameter, chan=%d c1=%d c2=%d\n",chan+1,control,value);
 }
 
+
 void txt_pitchbend(chan,msb,lsb)
+int chan, msb, lsb;
 {
   prtime();
   printf("Pitchbend, chan=%d msb=%d lsb=%d\n",chan+1,msb,lsb);
 }
 
 void txt_program(chan,program)
+int chan, program;
 {
   prtime();
   printf("Program, chan=%d program=%d\n",chan+1,program);
 }
 
 void txt_chanpressure(chan,press)
+int chan, press;
 {
   prtime();
   printf("Channel pressure, chan=%d pressure=%d\n",chan+1,press);
 }
 
 void txt_sysex(leng,mess)
+int leng;
 char *mess;
 {
   prtime();
@@ -151,6 +161,7 @@ char *mess;
 }
 
 void txt_metamisc(type,leng,mess)
+int type, leng;
 char *mess;
 {
   prtime();
@@ -158,6 +169,7 @@ char *mess;
 }
 
 void txt_metaspecial(type,leng,mess)
+int type, leng;
 char *mess;
 {
   prtime();
@@ -165,6 +177,7 @@ char *mess;
 }
 
 void txt_metatext(type,leng,mess)
+int type, leng;
 char *mess;
 {
   static char *ttype[] = {
@@ -195,6 +208,7 @@ char *mess;
 }
 
 void txt_metaseq(num)
+int num;
 {
   prtime();
   printf("Meta event, sequence number = %d\n",num);
@@ -207,6 +221,7 @@ void txt_metaeot()
 }
 
 void txt_keysig(sf,mi)
+int sf,mi;
 {
   prtime();
   printf("Key signature, sharp/flats=%d  minor=%d\n",sf,mi);
@@ -221,6 +236,7 @@ long ltempo;
 }
 
 void txt_timesig(nn,dd,cc,bb)
+int nn, dd, cc, bb;
 {
   int denom = 1;
   while ( dd-- > 0 )
@@ -231,6 +247,7 @@ void txt_timesig(nn,dd,cc,bb)
 }
 
 void txt_smpte(hr,mn,se,fr,ff)
+int hr, mn, se, fr, ff;
 {
   prtime();
   printf("SMPTE, hour=%d minute=%d second=%d frame=%d fract-frame=%d\n",

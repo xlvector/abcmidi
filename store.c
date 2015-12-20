@@ -184,11 +184,10 @@ int main()
 
  */
 
-#define VERSION "3.64 July 15 2015 abc2midi" 
+#define VERSION "3.84 December 19 2015 abc2midi" 
 
 /* enables reading V: indication in header */
 #define XTEN1 1
-/*#define INFO_OCTAVE_DISABLED 1*/
 
 /* for Microsoft Visual C++ 6.0 and higher */
 #ifdef _MSC_VER
@@ -199,7 +198,7 @@ int main()
 
 
 #ifdef _MSC_VER
-#define snprintf _snprintf_s
+#define snprintf _snprintf
 #endif
 
 #include "abc.h"
@@ -259,11 +258,10 @@ int headerpartlabel;
 int dotune, pastheader;
 int hornpipe, last_num, last_denom;
 int timesigset;
-int retain_accidentals;
 int ratio_a, ratio_b;
 int velocitychange = 15;
 int chordstart=0;
-int nopropagate_accidentals = 0;
+int propagate_accidentals = 2; /* [SS] 2015-08-18 */
 /* microtonal support and scale temperament */
 int active_pitchbend;
 extern struct fraction setmicrotone; /* [SS] 2014-01-07 */
@@ -475,7 +473,7 @@ extern char* featname[];
 char *csmfilename = NULL;  /* [SS] 2013-04-10 */
 
 /* [SS] 2015-06-01 */
-#define MAXMIDICMD 20 
+#define MAXMIDICMD 200 
 char midicmdname[MAXMIDICMD][32];
 char *midicmd[MAXMIDICMD];
 int nmidicmd = 0;
@@ -851,6 +849,7 @@ static void setup_chordnames()
 
 void event_init(argc, argv, filename)
 /* this routine is called first by parseabc.c */
+int argc;
 char* argv[];
 char **filename;
 {
@@ -951,7 +950,7 @@ char **filename;
     if (n < 1) {printf("expecting float between 415.30 and 466.16 after -TT\n");
                } else {
                retuning = 1;
-               semitone_shift = (float) 12.0 * log10(afreq/440.0f)/log10(2.0f);
+               semitone_shift = (float) (12.0 * log10(afreq/440.0f)/log10(2.0f)); /* [SS] 2015-10-08 extra parentheses */
                printf("afreq = %f semitone_shift = %f\n",afreq,semitone_shift);         
                if (semitone_shift >= 1.001) {printf("frequency %f must be less than 466.16\n",afreq);
                    retuning = 0;
@@ -1756,86 +1755,86 @@ char *s;
   };
 }
 
+int readaln(); /* links to parseabc.c */
 
 /* [SS] 2015-06-01 For interpreting the %%MIDIdef command */
 void parse_mididef(s)
 char *s;
 {
 char *p;
+int i;
 if (nmidicmd >= MAXMIDICMD) {
     event_error("Too many %%MIDIdef's ");
     return;
     }
 p = s;
 skipspace(&p);
-readaln(midicmdname[nmidicmd], &p, 31);
+i = readaln(midicmdname[nmidicmd], &p, 31);
 skipspace(&p);
 midicmd[nmidicmd] =  addstring(p);
 nmidicmd++;
 }
 
+
 /* [SS] 2015-06-01 For converting the %%MIDIx command to a
    %%MIDI command
 */
-char * expand_midix(s)
+void event_midi();
+
+
+void process_midix(s)
 char *s;
 {
+/* The function handles the %%MIDIx command translating all the
+   codewords into %%MIDI commands and sending the commands to
+   event_midi(). If it encounters two %%MIDI controlstring commands,
+   then it also sends a %%MIDI controlcombo so that both
+   controlstrings are handled by the !shape! command.
+*/
 char msg[200];
 char *p;
 char name[32];
-int i;
+int i,j,k;
 p = s;
-skipspace(&p);
-readaln(&name,&p,31);
-for (i=0; i<nmidicmd;i++) {
+j = 1;
+k = 0;
+while (j > 0) {
+    skipspace(&p);
+    j = readaln(&name,&p,31);
+    if (j < 1) break;
+    for (i=0; i<nmidicmd;i++) {
 	  if (strcmp(midicmdname[i],name) == 0) break;
 	  }
 /* [SS] 2015-07-15 */
-if (i == nmidicmd) {
-    sprintf(msg, "cannot match %%%%MIDIx %s with corresponding MIDIdef", name);
-    event_error(msg);
-    return("null");
+    if (i == nmidicmd) {
+        sprintf(msg, "cannot match %%%%MIDIx %s with corresponding MIDIdef", name);
+        event_error(msg);
+        }
+    if (k > 0 && strncmp(midicmd[i],"controlstring",12) == 0)
+        event_midi("controlcombo");
+    event_midi(midicmd[i]); 
+    if (strncmp(midicmd[i],"controlstring",12) == 0) k++;
     }
-return midicmd[i];
 }
 
 
-
-void event_specific(package, s)
-/* package-specific command found i.e. %%NAME */
-/* only %%MIDI commands are actually handled */
-char *package, *s;
-{
-  char msg[200], command[40];
-  char *p;
-  int done;
-
-  if (started_parsing == 0) {
-	event_specific_in_header(package,s);
-	return;
-	}
-
-/* [SS] 2015-06-01 */
-  if (strcmp(package,"MIDIdef") == 0) {
-     parse_mididef(s);
-     return;
-     }
-
-  if (strcmp(package,"MIDIx") == 0) {
-     s = expand_midix(s);
-     if (strcmp(s,"null") == 0) return;
-     package = "MIDI";
-     }
-
- 
-  if (strcmp(package, "MIDI") == 0) {
+/* [SS] 2015-08-11 */
+void event_midi(s)
+/* Handles %%MIDI commands. It was originally part of
+   event_specific.
+*/
+char *s; 
+    {
     int ch;
-    int trans, rtrans;
+    char command[40];
+    char *p;
+    int done;
 
     p = s;
     done = 0;
     skipspace(&p);
     readstr(command, &p, 40);
+
     if (strcmp(command, "channel") == 0) {
       skipspace(&p);
       ch = readnump(&p) - 1;
@@ -1853,10 +1852,9 @@ char *package, *s;
           if (v->midichannel == -1) v->midichannel = ch; /* [SS] 2015-03-24 */
           }
       done = 1;
-    };
-    trans = strcmp(command, "transpose");
-    rtrans = strcmp(command, "rtranspose");
-    if ((trans == 0) || (rtrans == 0)) {
+    }
+
+    else if ((strcmp(command,"transpose") == 0) || (strcmp(command,"rtranspose") == 0)) {
       int neg, val;
 
       skipspace(&p);
@@ -1870,40 +1868,45 @@ char *package, *s;
       val = readnump(&p);
       if (neg) val = - val;
 
-        if (trans == 0) {
+        if (strcmp(command,"transpose") == 0) {
           addfeature(GTRANSPOSE, val, 0, 0);
         } else {
           addfeature(RTRANSPOSE, val, 0, 0);
         };
       done = 1;
-    };
-    if (strcmp(command, "C") == 0) {
+    }
+
+    else if (strcmp(command, "C") == 0) {
       int val;
 
       skipspace(&p);
       val = readnump(&p);
       middle_c = val;
       done = 1;
-    };
-    if (strcmp(command, "nobarlines") == 0) {
-      retain_accidentals = 0;
+    }
+
+    else if (strcmp(command, "nobarlines") == 0) {
+     propagate_accidentals = 0; /* [SS] 2015-08-18 */
       done = 1;
-    };
-    if (strcmp(command, "barlines") == 0) {
-      retain_accidentals = 1;
+    }
+
+    else if (strcmp(command, "barlines") == 0) {
+      propagate_accidentals = 2; /* [SS] 2015-08-18 */
       done = 1;
-    };
-    if (strcmp(command, "fermatafixed") == 0) {
+    }
+
+    else if (strcmp(command, "fermatafixed") == 0) {
       fermata_fixed = 1;
       done = 1;
-    };
-    if (strcmp(command, "fermataproportional") == 0) {
+    }
+
+    else if (strcmp(command, "fermataproportional") == 0) {
       fermata_fixed = 0;
       done = 1;
-    };
+    }
 
     /* [SS] 2014-01-12 */
-    if (strcmp(command, "tuningsystem") == 0) {
+    else if (strcmp(command, "tuningsystem") == 0) {
       skipspace(&p);
       if (strcmp(p,"comma53") == 0) {
         printf("%s\n",p);
@@ -1914,11 +1917,10 @@ char *package, *s;
         fc53 = fopen("abcmid.txt","w");
 #endif
         }
-    };
+    }
 
-    if (strcmp(command, "ratio") == 0) {
+    else if (strcmp(command, "ratio") == 0) {
       int a, b;
-
       skipspace(&p);
       b = readnump(&p);
       skipspace(&p);
@@ -1934,12 +1936,11 @@ char *package, *s;
         event_error("Invalid ratio");
       };
       done = 1;
-    };
+    }
 
-    if (strcmp(command, "grace") == 0) {
+    else if (strcmp(command, "grace") == 0) {
       int a, b;
       char msg[200];
-
       skipspace(&p);
       a = readnump(&p);
       if (*p != '/') {
@@ -1960,9 +1961,9 @@ char *package, *s;
         };
       };
       done = 1;
-    };
+    }
 
-    if(strcmp(command,"gracedivider") == 0) {
+    else if(strcmp(command,"gracedivider") == 0) {
       int b;
       char msg[200];
       skipspace(&p);
@@ -1980,7 +1981,7 @@ char *package, *s;
     }
 
 
-    if (strcmp(command, "trim") == 0) {
+    else if (strcmp(command, "trim") == 0) {
       int a, b;
       skipspace(&p);
       a = readnump(&p);
@@ -1999,10 +2000,10 @@ char *package, *s;
        };
       };
       done = 1;
-    };
+    }
 
     /* [SS] 2015-06-16 */
-    if (strcmp(command, "expand") == 0) {
+    else if (strcmp(command, "expand") == 0) {
       int a, b;
       skipspace(&p);
       a = readnump(&p);
@@ -2021,18 +2022,20 @@ char *package, *s;
        };
       };
       done = 1;
-    };
+    }
 
 
-    if (strcmp(command, "gchordon") == 0) {
+    else if (strcmp(command, "gchordon") == 0) {
       addfeature(GCHORDON, 0, 0, 0);
       done = 1;
-    };
-    if (strcmp(command, "gchordoff") == 0) {
+    }
+
+    else if (strcmp(command, "gchordoff") == 0) {
       addfeature(GCHORDOFF, 0, 0, 0);
       done = 1;
-    };
-    if (strcmp(command, "chordname") == 0) {
+    }
+
+    else if (strcmp(command, "chordname") == 0) {
       char name[20];
       int i, notes[10]; /* [SS] 2012-01-29 */
 
@@ -2056,10 +2059,10 @@ char *package, *s;
         addchordname(name, i, notes);
       };
       done = 1;
-    };
+    }
 
 
-  if (strcmp(command, "temperamentlinear") == 0) {
+  else if (strcmp(command, "temperamentlinear") == 0) {
       double octave_cents=0.0;
       double fifth_cents=0.0;
       temperament = 1;
@@ -2094,27 +2097,24 @@ char *package, *s;
     }
 
   /* [HL] 2015-05-15 */
-  if (strcmp(command, "temperamentequal") == 0) {
+  else if (strcmp(command, "temperamentequal") == 0) {
       double octave_cents;
-      double fifth_cents;
       int acc_size;
       int narg, ndiv, fifth_index, sharp_steps;
-
       narg = sscanf(p," %d %lf %d %d ",&ndiv, &octave_cents, &fifth_index, &sharp_steps);
-
- 
-
       switch (narg) {
       case 1:
 	  octave_size = (int)( 1200.0 *SEMISIZE/100.0 + 0.5);
-	  fifth_size = (int)( 1901.96 *SEMISIZE/100.0 + 0.5) - octave_size;
-	  fifth_size = ((int)(1.0* ndiv *fifth_size/octave_size + 0.5)) * (1.0*octave_size/ndiv);
+	  fifth_size = (int)( 1901.95500086539 *SEMISIZE/100.0 + 0.5) - octave_size;
+          /* [SS] 2015-10-08 extra parentheses after (int) */
+	  fifth_size = (int) (((int) (1.0* ndiv *fifth_size/octave_size + 0.5)) * (1.0*octave_size/ndiv));
 	  acc_size = 7*fifth_size - 4*octave_size;
 	  break;
       case 2:
 	  octave_size = (int)(octave_cents * SEMISIZE/100.0 + 0.5);
 	  fifth_size = (int) (1901.95500086539 *SEMISIZE/100.0 + 0.5) - octave_size;
-	  fifth_size = ((int) ( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv);
+          /* [SS] 2015-10-08 extra parentheses after (int) */
+	  fifth_size = (int) (((int)( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv));
 	  acc_size = 7*fifth_size - 4*octave_size;
 	  break;
       case 3:
@@ -2122,8 +2122,8 @@ char *package, *s;
 	  if (fifth_index > 0) /* user-defined fifth size */
 	      fifth_size = (int) ( 1.0 * fifth_index * octave_size/ndiv + 0.5);
 	  else {               /* automatically computed fifth size */
-	      fifth_size = (int) (1901.95500086539 *SEMISIZE/100.0 + 0.5) - octave_size;
-	      fifth_size = ((int) ( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv);
+	      fifth_size = ((int) (1901.95500086539 *SEMISIZE/100.0 + 0.5)) - octave_size;
+	      fifth_size = (int) (((int) ( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv));
 	  }
 	  acc_size = 7*fifth_size - 4*octave_size;
 	  break;
@@ -2133,7 +2133,8 @@ char *package, *s;
 	      fifth_size = (int) ( 1.0 * fifth_index * octave_size/ndiv + 0.5);
 	  else {               /* automatically computed fifth size */
 	      fifth_size = (int) (1901.95500086539 *SEMISIZE/100.0 + 0.5) - octave_size;
-	      fifth_size = ((int) ( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv);
+          /* [SS] 2015-10-08 extra parentheses after (int) */
+	      fifth_size = (int) (((int) ( 1.0 * fifth_size/octave_size*ndiv + 0.5 )) * (1.0*octave_size/ndiv));
 	  }
 	  /* user-defined accidental size */
 	  acc_size = (int) (1.0 * sharp_steps * octave_size/ndiv + 0.5);
@@ -2178,7 +2179,7 @@ char *package, *s;
       done = 1;
     }
 
-  if (strcmp(command, "temperamentnormal") == 0) {
+  else if (strcmp(command, "temperamentnormal") == 0) {
       temperament = 0;
       event_normal_tone();
       done = 1;
@@ -2186,7 +2187,7 @@ char *package, *s;
       }
 
 
-    if (strcmp(command,"drumon") == 0 && dotune) {  /* [SS] 2010-05-26 */
+  else if (strcmp(command,"drumon") == 0 && dotune) {  /* [SS] 2010-05-26 */
       addfeature(DRUMON, 0, 0, 0);
       v->hasdrums = 1;
       drumvoice = v->indexno; /* [SS] 2010-02-09 */
@@ -2198,7 +2199,7 @@ char *package, *s;
        done = 1;
     }
 
-    if (strcmp(command,"droneon") == 0 && dotune) {
+  else if (strcmp(command,"droneon") == 0 && dotune) {
       addfeature(DRONEON, 0, 0, 0);
       v->hasdrone = 1;
       if ((dronevoice != 0) && (dronevoice != v->indexno)) {
@@ -2210,30 +2211,58 @@ char *package, *s;
            done = 1;
            }
     }
-    if (strcmp(command,"droneoff") == 0) {
+
+  else if (strcmp(command,"droneoff") == 0) {
        addfeature(DRONEOFF, 0, 0, 0);
        done = 1;
     }
 
-    if (strcmp(command, "deltaloudness") == 0) {
+  else if (strcmp(command, "deltaloudness") == 0) {
       skipspace(&p);
       velocitychange = readnump(&p);
       done = 1;
       }
-
 	if (strcmp(command, "harpmode") == 0) {  /* [JS] 2011-04-29 */
       skipspace(&p);
       harpmode = readnump(&p);
       done = 1;
-    };
+    }
 
 
-    if (done == 0) {
+  if (done == 0) {
       /* add as a command to be interpreted later */
       textfeature(DYNAMIC, s);
     };
-  } else
-  {
+  }
+
+
+void event_specific(package, s)
+/* package-specific command found i.e. %%NAME */
+char *package, *s;
+{
+  char msg[200], command[40];
+  char *p;
+  int done;
+
+  if (started_parsing == 0) {
+	event_specific_in_header(package,s);
+	return;
+	}
+
+/* [SS] 2015-06-01 */
+  if (strcmp(package,"MIDIdef") == 0) {
+     parse_mididef(s);
+     return;
+     }
+
+  if (strcmp(package,"MIDIx") == 0) {
+     process_midix(s);
+     }
+
+ 
+  if (strcmp(package, "MIDI") == 0) 
+     event_midi(s); else {
+     
 /* Parse %%abc directive */
       done = 0;
       if (strcmp(package, "abc") == 0)
@@ -2320,12 +2349,20 @@ char *package, *s;
         }
       }
      if (strcmp(package, "propagate") == 0) {
+     /* [SS] 2015-08-18 */
           p = s;
           p = p + 13;
-         printf("propagate-accidentals encountered\n");
+         /*printf("propagate-accidentals encountered\n");*/
          if (strcmp(p,"not") == 0) {
-             nopropagate_accidentals = 1;
-          } else {nopropagate_accidentals = 0;}
+             propagate_accidentals = 0;
+          } else if (strcmp(p,"pitch") == 0) {
+             propagate_accidentals = 2;
+          } else if (strcmp(p,"octave") == 0) {
+             propagate_accidentals = 1;
+          } else {
+              sprintf(msg, "cannot interpret %%%%propagate-accidentals %s\nThe choices are not, octave or pitch" ,p);
+              event_error(msg);
+              }
          done = 1;
             }
 
@@ -2352,7 +2389,7 @@ char *package, *s;
 
 /* global variables that can altered by %%MIDI before tune */
 int default_middle_c = 60;
-int default_retain_accidentals = 1;
+int default_retain_accidentals = 2; /* [SS] 2015-08-18 */
 int default_fermata_fixed = 0;
 int default_ratio_a = 2;
 int default_ratio_b = 4;
@@ -2388,7 +2425,7 @@ char *package, *s;
       done = 1;
     };
     if (strcmp(command, "barlines") == 0) {
-      default_retain_accidentals = 1;
+      default_retain_accidentals = 2;
       done = 1;
     };
     if (strcmp(command, "fermatafixed") == 0) {
@@ -2914,6 +2951,7 @@ void event_octave(num, local)
 /* used internally by other routines when octave=N is encountered */
 /* in I: or K: fields */
 int num;
+int local;
 {
   if (dotune) {
     if (pastheader || local) {
@@ -2929,17 +2967,30 @@ char* key;
 char* value;
 {
   int num;
+  char midicmd[64];
+  char errmsg[80];
 
-#ifdef INFO_OCTAVE_DISABLED
-  return;
-#endif
   if (strcmp(key, "octave")==0) {
     num = readsnumf(value);
     event_octave(num,0);
   };
   /* [SS] 2015-06-02 */
-  if (strcmp(key, "MIDI") == 0 || strcmp(key, "MIDIx") == 0)
-     event_specific(key, value);
+  if (strcmp(key, "MIDI") == 0 || strcmp(key, "MIDIx") == 0 )
+         event_specific(key, value);
+
+  else if(strcmp(key, "volinc")  == 0 || strcmp(key,"vol") == 0)
+     {
+     midicmd[0] = 0;
+     strcat(midicmd, key);
+     strcat(midicmd, " ");
+     strcat(midicmd, value);
+     event_specific("MIDI",midicmd);
+     }
+
+  else {
+    sprintf(errmsg,"I: key \' %s\' not recognized", key);
+    event_error(errmsg);
+    }
 }
 
 static void stack_broken(v)
@@ -3436,7 +3487,7 @@ int propagate_accs;
     acc = v->workmap[noteno][octave+4];
     mul = v->workmul[noteno][octave+4];
   } else {
-    if ((retain_accidentals) && (propagate_accs)) {
+    if (propagate_accs) {
       v->workmap[noteno][octave+4] = acc;
       v->workmul[noteno][octave+4] = mul;
     };
@@ -3468,9 +3519,13 @@ return pitch;
 static int pitchof_b(note, accidental, mult, octave, propagate_accs,pitchbend)
 /* computes MIDI pitch for note. If global temperament is set,
    it will apply a linear temperament and return a
-   pitchbend. If propagate_accs is 1, apply any accidental to all
-   instances of  that note in the bar. If propagate_accs is 0, 
-   accidental does not apply to other notes */
+   pitchbend. If propagate_accs == 2, apply any accidental to all
+   instances of  that note of the same pitch irrespective of the
+   octave in the bar. If propagate_accs == 1, apply any accidental
+   to all notes of the same pitch and same octave in the bar.
+   If propagate_accs = 0, do not apply the accidental to other
+   notes in the bar.
+*/
 char note, accidental;
 int mult, octave;
 int propagate_accs;
@@ -3481,6 +3536,7 @@ int *pitchbend;
   int mul, noteno;
   int pitch4096,pitch,bend;
   int a,b;
+  int j;
 
   static int scale[7] = {0, 2, 4, 5, 7, 9, 11};
   const int accidental_size = sharp_size;  /* [HL] 2015-05-15 - for temperamentlinear and temperamentequal */
@@ -3499,21 +3555,33 @@ int *pitchbend;
   mul = mult;
   noteno = (int)note - 'a';
 
-  if (acc == ' ' && !microtone) {
+  /* [SS] 2015-08-18 */
+  if (acc == ' ' && !microtone) {  /* no accidentals, apply current state */
     acc = v->workmap[noteno][octave+4];
     mul = v->workmul[noteno][octave+4];
     a = v->workmic[noteno][octave+4].num;   /* 2014-01-26 */
     b = v->workmic[noteno][octave+4].denom;
     event_microtone(1,a,b);
-  } else {
-    if ((retain_accidentals) && (propagate_accs)) {
-      v->workmap[noteno][octave+4] = acc;
-      v->workmul[noteno][octave+4] = mul;
-      /* [SS] 2014-01-26 */
-      v->workmic[noteno][octave+4].num   = setmicrotone.num;
-      v->workmic[noteno][octave+4].denom = setmicrotone.denom;
-    };
-  };
+  } else {  /* some accidentals save the state if propagate_accs != 0 */
+    if (propagate_accs) {
+      if (propagate_accs == 1) {  /* accidentals applies to only current octave */
+        v->workmap[noteno][octave+4] = acc;
+        v->workmul[noteno][octave+4] = mul;
+        /* [SS] 2014-01-26 */
+        v->workmic[noteno][octave+4].num   = setmicrotone.num;
+        v->workmic[noteno][octave+4].denom = setmicrotone.denom;
+      } else { for (j=0;j<10;j++) { /* accidentals apply to all octaves */
+        v->workmap[noteno][j] = acc;
+        v->workmul[noteno][j] = mul;
+        /* [SS] 2014-01-26 */
+        v->workmic[noteno][j].num   = setmicrotone.num;
+        v->workmic[noteno][j].denom = setmicrotone.denom;
+        }
+     }
+   }
+ };
+
+
 
   p = (int) ((long) strchr(anoctave, note) - (long) anoctave);
   if (temperament) {
@@ -3582,10 +3650,10 @@ void convert_to_comma53 (char acc, int *midipitch, int* midibend)
 /* The function converts *midipitch, *midibend to the
    closest comma53 pitch values.
 */
-float c53factor = 0.22641509;
+float c53factor = 0.22641509f;
 float eqtempmidi,bendvalue,c53midi;
 int p48,octave,c53;
-bendvalue = (float) (*midibend - 8192.0)/4096.0;
+bendvalue = (float) ((*midibend - 8192.0)/4096.0);
 eqtempmidi = (float) (*midipitch) + bendvalue;
 octave = (int) (eqtempmidi / 12.0);
 p48 = (int) (eqtempmidi * 4.0) % 48;
@@ -4052,10 +4120,8 @@ int xoctave, n, m;
 
 /* linear temperament support */
   if (v->drumchannel) pitch = barepitch(note,accidental,mult,octave);
-  else if (nopropagate_accidentals == 1 ) 
-    pitch = pitchof_b(note, accidental, mult, octave, 0,&active_pitchbend);
-  else
-    pitch = pitchof_b(note, accidental, mult, octave, 1,&active_pitchbend);
+  /* [SS] 2015-08-18 */
+  pitch = pitchof_b(note, accidental, mult, octave, propagate_accidentals,&active_pitchbend);
 #ifndef MAKAM
   pitch_noacc = pitchof_b(note, 0, 0, octave, 0,&dummy);
 #endif
@@ -4382,6 +4448,11 @@ if (nofnop == 0) {
 
  if (strcmp(s, "bend") == 0) {   /* [SS] 2012-12-11 */
    addfeature(EFFECT, 1, 0, 0);
+   done = 1;
+  };
+
+ if (strcmp(s, "shape") == 0) { /* [SS] 2015-07-26 */
+   addfeature(EFFECT, 2, 0, 0);
    done = 1;
   };
 
@@ -5400,7 +5471,7 @@ static void startfile()
   numsplits = 0;
   splitdepth = 0; /* [SS] 2010-02-07 */
   v1index = -1; /* [SS] 2010-02-07 */
-  retain_accidentals = default_retain_accidentals;
+  propagate_accidentals = default_retain_accidentals;
   fermata_fixed = default_fermata_fixed;
   if (ratio_standard == -1) {
     ratio_a = default_ratio_a;
@@ -5680,7 +5751,7 @@ for (i=0;i<notes;i++) {
          case ROLL:
            doroll_output(i);
            break;
-         default: printf("no such decoration %d\n",decotype);
+         default: printf("no such decoration %d\n",decotype[i]);
          }
       }
   }
@@ -5872,6 +5943,7 @@ void event_eof()
   free(outbase);
 }
 
+void set_control_defaults(); /* from queues.c */
 
 int main(argc,argv)
 int argc;
@@ -5883,6 +5955,8 @@ char *argv[];
 
   for (i=0;i<DECSIZE;i++) decorators_passback[i]=0;
   for (i=0;i<64;i++) dependent_voice[i]=0;
+  set_control_defaults();
+
   event_init(argc, argv, &filename);
   /* [SS] 2013-04-10 */
   if (csmfilename != NULL) read_custom_stress_file(csmfilename);

@@ -745,6 +745,8 @@ char* s;
   };
 }
 
+void event_octave(int, int);
+
 void event_voice(n, s, vp)
 /* handles a V: field in the abc */
 int n;
@@ -2006,7 +2008,7 @@ for (i=from;i<=to;i++)
   {
   j = feature[i];
   if (j<0 || j>73) printf("illegal feature[%d] = %d\n",i,j); /* [SS] 2012-11-25 */
-  else printf("%d %s   %d %d %d %d %d \n",i,featname[j],pitch[i],num[i],denom[i]);
+  else printf("%d %s   %d %d %d %d \n",i,featname[j],pitch[i],num[i],denom[i]);
   }
 }
 

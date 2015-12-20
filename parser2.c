@@ -11,8 +11,12 @@
 
 void event_info(s)
 char* s;
-/* An I: field has been encountered. This routine scans the following */
-/* text to extract items of the form key=value  */
+/* An I: field has been encountered. This routine scans the following 
+   text to extract items of the form key=value. The equal sign is optional
+   if only one key (eg MIDI, octave, vol, etc.) occurs in the I: field.
+   Otherwise we need to follow each key with an equal sign so that we
+   know that the preceding item was a key.
+*/
 {
   char* key;
   char* endkey;
@@ -22,6 +26,7 @@ char* s;
   char* newword;
   char* lastnewword;
   char* ptr;
+  char errmsg[80];
   int doval;
 
   ptr = s;
@@ -45,7 +50,12 @@ char* s;
         endvalue = NULL;
         lastendvalue = NULL;
       } else {
-        key = ptr;
+      /* [SS] 2015-09-08 */
+      /* assume only one I: key occurs; grab the rest in value */
+        *endkey = '\0'; /* end the key ptr */
+        value = ptr;   /* start the value ptr here */
+        event_info_key(key,value);
+        return;
       };
     } else {
       /* look for value */

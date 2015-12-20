@@ -461,6 +461,14 @@ parentheses. You can turn off all note trimming by setting x to 0,
 eg 0/1. By default, note trimming is turned off at the beginning
 of a tune or voice command.
 
+.PP
+%%MIDI expand x/y
+.PP
+where x and y are two numbers defining a fraction less than 1.
+This command controls the articulation of notes and chords in the
+reverse manner. The notes are lengthened by this fraction so they
+overlap the start of the next note.
+
 
 .PP
 %%MIDI drummap note midipitch
@@ -507,8 +515,14 @@ value which here is 1.4.
 
 .PP
 %%MIDI stressmodel n
+.PP
 
 where n is either 1 or 2, selects the stress model implementation.
+
+.PP
+ other %%MIDI commands such as bendvelocity, bendstring,
+controlstring have been introduced recently and are described
+in the file abcguide.txt.
 
 
 
@@ -536,7 +550,7 @@ abc2ps(1), midi2abc(1), yaps(1).
 .SH AUTHOR
 James Allwright <J.R.Allwright@westminster.ac.uk>
 .SH SUPPORTED
- by Seymour Shlien <seymour.shlien@crc.ca>
+ by Seymour Shlien <fy733@ncf.ca>
 .SH VERSION
 This man page describes abc2midi version 2.27  June 25 2006.
 .SH COPYRIGHT

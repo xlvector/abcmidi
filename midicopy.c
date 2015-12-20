@@ -39,7 +39,7 @@
 
 
 
-#define VERSION "1.20 2013-Oct-28"
+#define VERSION "1.22 November 15 2015"
 #include "midicopy.h"
 #define NULLFUNC 0
 #define NULL 0
@@ -51,7 +51,7 @@
 #include <stdio.h>
 
 char *strcpy (), *strcat ();
-
+int strcmp();
 
 /* Functions to be called while processing the MIDI file. */
 int (*Mf_arbitrary) () = NULLFUNC;
@@ -343,30 +343,37 @@ copy_metatext (int type, int length, char *m)
 
 void
 copy_timesig (c1, c2, c3, c4)
+int c1, c2, c3, c4;
 {
   char data[4];
-  data[0] = c1;
-  data[1] = c2;
-  data[2] = c3;
-  data[3] = c4;
+  data[0] = (char) c1;
+  data[1] = (char) c2;
+  data[2] = (char) c3;
+  data[3] = (char) c4;
   mf_write_meta_event (0x58, data, 4);
 }
 
 void
 copy_keysig (c1, c2)
+int c1, c2;
 {
   char data[2];
-  data[0] = c1;
-  data[1] = c2;
+  data[0] = (char) c1;
+  data[1] = (char) c2;
   mf_write_meta_event (0x59, data, 2);
 }
 
 
 /* Metaevents */
+/* 2015-11-14 [SS] */
 void
-copy_metaseqnum (int seq)
+copy_metaseqnum (c1,  c2)
+unsigned char c1,c2;
 {
-  mf_write_meta_event (0x00, (char *) seq, 2);
+  char data[2];
+  data[0] = (char) c1;
+  data[1] = (char) c2;
+  mf_write_meta_event (0x00, (char *) data, 2);
 }
 
 
@@ -886,7 +893,8 @@ metaevent (int type)
   switch (type)
     {
     case 0x00:
-      copy_metaseqnum (to16bit (m[0], m[1]));
+      /* 2015-11-14 [SS] */
+      copy_metaseqnum (m[0], m[1]);
       break;
     case 0x01:			/* Text event */
     case 0x02:			/* Copyright notice */

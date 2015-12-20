@@ -1,6 +1,7 @@
 Guide to writing abc for abc2midi
 ---------------------------------
-(updated February 08 2010 -- gchordbars)
+(Updated August 11 2015 -- %%MIDI expand, bendvelocity, bendstring,
+controlstring added.))
 
 The defining document for abc is the abc version 1.6 specification which can 
 be found at http://www.gre.ac.uk/~c.walshaw/abc2mtex/abc.txt . This document
@@ -1356,6 +1357,69 @@ value which here is 1.4.
 %%MIDI stressmodel n
 
 where n is either 1 or 2, selects the stress model implementation.
+
+
+%%MIDI expand m/n
+
+This command,causes  all the following notes be lengthened by
+the amount factor m/n so that they overlap the next note.
+Thus the next note is started at the proper time, but the
+prevous note ends after the beggining of the note.
+This overlap causes a nice effect for particular MIDI instruments
+such as choir voices. The %%MIDI expand function behaves in
+the opposite manner as the %%MIDI trim function.
+
+
+%%MIDI snt k pitch
+
+Since many MIDI devices do not support this function, use of
+this command is not recommended. The command changes the tuning
+of a single note using the "universal system exclusive messages".
+k is the MIDI pitch being retuned (a number between 0 to 127)
+and pitch is a floating point number representing the pitch's new
+value in MIDI pitch units.
+
+
+%%MIDI bendvelocity n1 n2
+
+This command defines how to bend the a particular note following
+the !bend! decoration. The pitch of the note shifts up or down
+as the note is playing. n1 is the velocity of the pitch change
+and n2 is the acceleration (how fast the velocity changes).
+The bend is accomplished by modifying the MIDI pitchwheel where
+the 8192 is the neutral.  Minimum and maximum values
+are 0 and 16383 correspond to two semitones shifts in either
+directions. The velocity and acceleration may be positive or
+negative.
+
+
+%%MIDI bendstring n1 n2 n3 n4 etc
+
+This command is a more general way for defining how a note
+is bent.  It can also apply with !shape! decoration
+discussed later. The note is split into n equal segments corresponding
+to each of the n1, n2, etc values. The n1, n2, ... values are the
+increments (or decrements if they are negative) which are added 
+to the pitchwheel value. Thus
+%%MIDI bendstring 1000 1000 -500 -500
+will split a note into 4 parts and the pitchwheel values in
+each part will be 9192, 10192, 9692, and 9192.
+
+
+
+%%MIDI controlstring m n1 n2 n3 ...
+
+This command defines how the m th MIDI controller changes for the
+note following the !shape! decoration. The note is divided
+into n segments where n is the number of values following
+the m or controller number. n1, n2, n3, ... are the values for
+controller m in each segment. This allows you to shape the sound
+of the note. For example, by changing the modwheel or the expression.
+All the values m, n1, n2 are numbers between 0 and 127.
+
+
+
+
 
 
 Global settings for abc2midi

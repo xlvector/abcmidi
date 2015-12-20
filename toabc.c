@@ -21,7 +21,7 @@
 
 /* back-end for outputting (possibly modified) abc */
 
-#define VERSION "1.81 July 02 2015 abc2abc"
+#define VERSION "1.84 November 10 2015 abc2abc"
 
 /* for Microsoft Visual C++ 6.0 or higher */
 #ifdef _MSC_VER
@@ -781,6 +781,8 @@ char *s;
   inmusic = 0;
 }
 
+void print_inputline(); /* from parseabc.c */
+
 void event_linebreak()
 {
   if (!output_on && passthru) print_inputline(); /* [SS] 2011-06-07*/
@@ -1310,10 +1312,20 @@ char *post;
 
 void event_timesig(n, m, checkbars)
 int n, m, checkbars;
+
+/* [code contributed by Larry Myerscough 2015-11-5]
+ * checkbars definition extended:
+ *  0=> no,
+ *  1=>yes, use numerical notation
+ *  2=>yes, use 'common' notation for 2/2 or 4/4 according to numerator 
+ *  */
 {
   if (checkbars == 1) {
     emit_int_sprintf("M:%d/", n);
     emit_int(m);
+  } else if (checkbars == 2) {
+      emit_int_sprintf("M:C", n);
+      if (n != 4) emit_string("|");
   } else {
     emit_string("M:none");
     barcheck = 0;
@@ -1486,7 +1498,6 @@ void note2semi (char *modmap) {
 /* to convert modmap to semiseq representation */
 int i;
 int semi;
-//for (i=0;i<12;i++) semiseq[i]=0;
 for (i=0;i<8;i++) {
   semi = convertnote[i];
   switch (modmap[i]) {
@@ -1510,7 +1521,9 @@ for (i=0;i<8;i++) {
   }
 }
 
-void transpose_semiseq (shift) {
+void transpose_semiseq (shift)
+int shift;
+{
 int i,j;
 int newseq[12];
 for (i=0;i<12;i++) {

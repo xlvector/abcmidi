@@ -22,7 +22,7 @@
 /* yapstree.c - back-end for abc parser. */
 /* generates a data structure suitable for typeset music */
 
-#define VERSION "1.62 May 13 2015 yaps"
+#define VERSION "1.63 November 15 2015 yaps"
 #include <stdio.h>
 #ifdef USE_INDEX
 #define strchr index
@@ -1335,7 +1335,8 @@ event_error("extended overlay not implemented in yaps");
 
 void event_split_voice()
 {
-addfeature(SPLITVOICE, (void*) lineno);
+/* [SS] 2015-11-15 * changed (void*) to (int *) */
+addfeature(SPLITVOICE, (int *)  lineno);
 event_error("voice split not implemented in yaps");
 }
 
@@ -1348,8 +1349,9 @@ char *s;
 void event_linebreak()
 /* A linebreak has been encountered */
 {
+/* [SS] 2015-11-15 * changed (void*) to (int *) */
   if (xinbody) {
-    addfeature(LINENUM, (void*)lineno);
+    addfeature(LINENUM, (int *)lineno);
   };
 }
 
@@ -1510,7 +1512,7 @@ char *str; /* string following first word */
           vskip(vspace);
         };
       } else {
-        addfeature(VSKIP, (void*)((int)vspace));
+        addfeature(VSKIP, (int*)((int)vspace));
       };
     };
   };
@@ -2173,7 +2175,8 @@ char* playonrep_list;
     return;
   };
   checkbar(type); /* increment bar number if bar complete */
-  addfeature(type, (void*)cv->barno); /* save bar number */
+/* [SS] 2015-11-15 * changed (void*) to (int *) */
+  addfeature(type, (int *)cv->barno); /* save bar number */
   switch(type) {
   case SINGLE_BAR:
     break;

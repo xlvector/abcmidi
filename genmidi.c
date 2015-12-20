@@ -56,7 +56,7 @@ void addfract(int *xnum, int *xdenom, int a, int b);
 void fdursum_at_segment(int segposnum, int segposden, int *val_num, int *val_den);
 void articulated_stress_factors (int n,  int *vel); 
 
-static void write_event(int event_type, int channel, char data[], int n);
+void write_event(int event_type, int channel, char data[], int n);
 
 float ranfrac ()
 {
@@ -155,6 +155,10 @@ int chordchannels[10]; /* for handling in voice chords and microtones */
 int nchordchannels = 0;
 extern int no_more_free_channels; /* [SS] 2015-03-23 from store.c */
 
+/* [SS] 2015-09-07 */
+int single_velocity_inc;
+int single_velocity;
+
 /* karaoke handling */
 extern int karaoke, wcount;
 int kspace;
@@ -246,10 +250,19 @@ int bendacceleration = 300;
 /* [SS] 2014-09-09 */
 int bendstate = 8192; /* also linked with queues.c */
 
-/* [SS] 2014-09-10 */
-int benddata[50];
+/* [SS] 2015-09-10 2015-10-03 */
+int benddata[256];
 int bendnvals;
 int bendtype = 1;
+
+/* [SS] 2015-07-24 2015-10-03 */
+#define MAXLAYERS 3
+int controldata[MAXLAYERS][256];
+int controlnvals[MAXLAYERS];
+int controldefaults[128]; /* [SS] 2015-08-10 */
+int nlayers = 0; /* [SS] 2015-08-20 */
+int controlcombo = 0; /* [SS] 2015-08-20 */
+
 
 /* for handling stress models */
 int nseg;       /* number of segments */
@@ -313,6 +326,7 @@ int *a, *b;
 int gtfract(anum,adenom, bnum,bdenom)
 /* compare two fractions  anum/adenom > bnum/bdenom */
 /* returns   (a > b)                       */
+int anum,adenom,bnum,bdenom;
 {
   if ((anum*bdenom) > (bnum*adenom)) {
     return(1);
@@ -1579,9 +1593,28 @@ void articulated_stress_factors (int n,  int *vel)
 /* compute the trim values that are applied and the end of the NOTE:
  * block in the writetrack() switch complex.*/
   trim_num = (int) ((float) num[n]*100.0*(1.0 - dur));
-  trim_denom = (int) (float) denom[n]* (float) 100.0;
+  trim_denom = (int) ((float) denom[n]* (float) 100.0); /* [SS] 2015-10-08 extra parentheses */
   /*printf("dur = %f %d/%d %d/%d gain = %d\n",dur,tnotenum,tnotedenom,trim_num,trim_denom,gain);*/
  }
+
+/* [SS] 2015-09-07 */
+int apply_velocity_increment_for_one_note (velocity)
+    int velocity;
+    {
+    velocity = velocity + single_velocity_inc;
+    if (velocity < 0) velocity = 0;
+    if (velocity > 127) velocity = 127;
+    single_velocity_inc = 0; 
+    return velocity;
+    }
+
+int set_velocity_for_one_note ()
+    {
+    int velocity;
+    velocity = single_velocity;
+    single_velocity = -1;
+    return velocity;
+    } 
 
 
 /* [SS] 2011-07-04 */
@@ -1595,6 +1628,13 @@ int n;
      stress_factors (n,   &vel);
   else note_beat(n,&vel);
   if (vel == 0) note_beat(n,&vel); /* [SS] 2011-09-06 */
+
+  /* [SS] 2015-09-07 */
+  if (single_velocity >= 0)
+     vel = set_velocity_for_one_note();
+  else if (single_velocity_inc != 0)
+     vel = apply_velocity_increment_for_one_note (vel);
+
   if (channel == 9) noteon_data(pitch[n],bentpitch[n],channel,vel);
   else noteon_data(pitch[n] + transpose + global_transpose, bentpitch[n], channel, vel);
 }
@@ -1615,7 +1655,22 @@ int p, channel;
   delta_time = 0L;
 }
 
-static void write_event(event_type, channel, data, n)
+/* [SS] 2015-07-27 */
+void write_event_with_delay(delta,event_type, channel, data, n)
+/* write MIDI special event such as control_change or pitch_wheel */
+int delta;
+int event_type;
+int channel, n;
+char data[];
+{
+  if (channel >= MAXCHANS) {
+    event_error("Channel limit exceeded\n");
+  } else {
+    mf_write_midi_event(delta, event_type, channel, data, n); 
+  };
+}
+
+void write_event(event_type, channel, data, n)
 /* write MIDI special event such as control_change or pitch_wheel */
 int event_type;
 int channel, n;
@@ -1664,7 +1719,7 @@ int n;
 int i,chan;
 int prog;
 /* [SS] 2015-05-17 do not make chord channels for track 0 if multi track */
-if (ntracks != 1 && tracknumber == 0) return;
+if (ntracks != 1 && tracknumber == 0) return 0; /* [SS] 2015-08-06 */
 if (n < 1) return -1;
 if (n > 9) n = 9;
 prog = current_program[channel];
@@ -1689,13 +1744,13 @@ int parse_stress_params (char *input) {
   input = next;
   if (*input == '\0') {return -1;} /* no data, probably file name */
   if (f == 0.0) {return -1;} /* no data, probably file name */
-  nseg = (int) f +0.0001;
+  nseg = (int) (f +0.0001); /* [SS] 2015-10-08 extra parentheses */
   for (n=0;n<32;n++) {fdur[n]= 0.0; ngain[n] = 0;}
   if (nseg > 31) {return -1;} 
   n = 0;
   while (*input != '\0' && n < nseg) {
     f = (float) strtod (input,&next);
-    ngain[n] = (int) f + 0.0001;
+    ngain[n] = (int) (f + 0.0001); /* [SS] 2015-10-08 extra parentheses */
     if (ngain[n] > 127 || ngain[n] <0) {
         printf("**error** bad velocity value ngain[%d] = %d in ptstress command\n",n,ngain[n]);
         }
@@ -1789,7 +1844,7 @@ float val,a0,a1;
 *val_num = 0;
 inx0 = segposnum/segposden;
 if (inx0 > nseg) {
-   *val_num = *val_num + (int) (float) 1000.0*fdursum[nseg];
+   *val_num = *val_num + (int) ((float) 1000.0*fdursum[nseg]); /* [SS] 2015-10-08 extra parentheses */
     /*inx0 = inx0 - nseg;  [SS] 2013-06-07*/
     inx0 = inx0 % nseg;  /* [SS] 2013-06-07 */
    }
@@ -1841,7 +1896,7 @@ int noteson;
     done = 1;
     } 
 
-  if (strcmp(command, "program") == 0) {
+  else if (strcmp(command, "program") == 0) {
     int chan, prog;
 
     skipspace(&p);
@@ -1857,31 +1912,33 @@ int noteson;
       write_program(prog, chan);
     };
     done = 1;
-  };
-  if (strcmp(command, "gchord") == 0) {
+  }
+
+  else if (strcmp(command, "gchord") == 0) {
     set_gchords(p);
     done = 1;
-  };
-  if (strcmp(command, "drum") == 0) {
+  }
+
+  else if (strcmp(command, "drum") == 0) {
     set_drums(p);
     done = 1;
-  };
+  }
 
-  if ((strcmp(command, "drumbars") == 0)) {
+  else if ((strcmp(command, "drumbars") == 0)) {
      drumbars = readnump(&p);
      if (drumbars < 1 || drumbars > 10) drumbars = 1;
      drumbarcount = drumbars - 1;
      done = 1;
      }
 
-  if ((strcmp(command, "gchordbars") == 0)) {
+  else if ((strcmp(command, "gchordbars") == 0)) {
      gchordbars = readnump(&p);
      if (gchordbars < 1 || gchordbars > 10) gchordbars = 1;
      gchordbarcount = gchordbars - 1;
      done = 1;
      }
 
-  if ((strcmp(command, "chordprog") == 0))  {
+  else if ((strcmp(command, "chordprog") == 0))  {
     int prog;
 
     prog = readnump(&p);
@@ -1899,7 +1956,8 @@ int noteson;
     };
     done = 1;
   }
-  if ((strcmp(command, "bassprog") == 0)) {
+
+  else if ((strcmp(command, "bassprog") == 0)) {
     int prog;
 
     prog = readnump(&p);
@@ -1916,19 +1974,27 @@ int noteson;
                        }
     };
     done = 1;
-  };
-  if (strcmp(command, "chordvol") == 0) {
+  }
+
+  else if (strcmp(command, "chordvol") == 0) {
     gchord.vel = readnump(&p);
     done = 1;
-  };
-  if (strcmp(command, "bassvol") == 0) {
+  }
+
+  else if (strcmp(command, "bassvol") == 0) {
     fun.vel = readnump(&p);
     done = 1;
-  };
+  }
 
 
   /* [SS] 2012-12-12 */
-  if (strcmp(command, "bendvelocity") == 0) {
+  else if (strcmp(command, "bendvelocity") == 0) {
+/* We use bendstring code so that bendvelocity integrates with !shape!.
+   Bends a note along the shape of a parabola. The note is
+   split into 8 segments. Given the bendacceleration and
+   initial bend velocity, the new pitch bend is computed
+   for each time segment.
+*/
     bendvelocity = bendacceleration = 0;
     skipspace(&p);
     val = readsnump(&p);
@@ -1936,17 +2002,29 @@ int noteson;
     skipspace(&p);
     val = readsnump(&p);
     bendacceleration = val;
-    bendtype = 1;
+    /* [SS] 2015-08-11 */
+    bendnvals = 0;
+    if (bendvelocity != 0 || bendacceleration != 0) {
+        for (i = 0; i<8; i++) {
+            benddata[i] = bendvelocity;
+            bendvelocity = bendvelocity + bendacceleration;
+            }
+        bendnvals = 8;
+        }
+    /*bendtype = 1; [SS] 2015-08-11 */
+    if (bendnvals == 1) bendtype = 3; /* [SS] 2014-09-22 */
+    else bendtype = 2;
     done = 1;
     }
 
   /* [SS] 2014-09-10 */
-  if (strcmp(command, "bendstring") == 0) {
+  else if (strcmp(command, "bendstring") == 0) {
      i = 0;
-     while (i<50) { /* [SS] 2014-09-10 */
+     while (i<256) { /* [SS] 2015-09-10 2015-10-03 */
           benddata[i] = readsnump(&p);
           skipspace(&p);
           i = i + 1;
+          /* [SS] 2015-08-31 */
           if (*p == 0) break;
         };
      bendnvals = i;
@@ -1957,9 +2035,7 @@ int noteson;
 
 
 
-
-
-  if (strcmp(command, "drone") == 0) {
+  else if (strcmp(command, "drone") == 0) {
     skipspace(&p);
     val = readnump(&p);
     if (val > 0) drone.prog = val;
@@ -1983,7 +2059,7 @@ int noteson;
     done = 1;
   }
 
-  if (strcmp(command, "beat") == 0) {
+  else if (strcmp(command, "beat") == 0) {
     skipspace(&p);
     loudnote = readnump(&p);
     skipspace(&p);
@@ -1996,9 +2072,9 @@ int noteson;
       beat = barsize;
     };
     done = 1;
-  };
+  }
 
-  if (strcmp(command, "beatmod") == 0) {
+  else if (strcmp(command, "beatmod") == 0) {
     skipspace(&p);
     velocity_increment = readsnump(&p);
     loudnote += velocity_increment;
@@ -2013,7 +2089,7 @@ int noteson;
     done = 1;
     }
 
-  if (strcmp(command, "beatstring") == 0) {
+  else if (strcmp(command, "beatstring") == 0) {
     int count;
 
     skipspace(&p);
@@ -2030,7 +2106,8 @@ int noteson;
     nbeats = strlen(beatstring);
     done = 1;
   }
-  if (strcmp(command, "control") == 0) {
+
+  else if (strcmp(command, "control") == 0) {
     int chan, n, datum;
     char data[20];
 
@@ -2047,20 +2124,54 @@ int noteson;
       skipspace(&p);
     };
     write_event(control_change, chan, data, n);
+    controldefaults[(int) data[0]] = (int) data[1]; /* [SS] 2015-08-10 */
     done = 1;
-  };
+  }
 
-  if( strcmp(command, "beataccents") == 0) {
+
+  /* [SS] 2015-07-24 */
+  else if (strcmp(command, "controlstring") == 0) {
+     if (!controlcombo) { /* [SS] 2015-08-20 */
+        for (i=0;i<MAXLAYERS;i++) controlnvals[i] = 0;
+        nlayers = 0;  /* overwrite layer 0 if not a combo */
+        }
+     i = 0;
+     if (nlayers >= MAXLAYERS) {
+        event_error("too many combos for control data");
+        } else {
+        while (i<256) { /* [SS] 2015-09-10  2015-10-03 */
+          controldata[nlayers][i] = readsnump(&p);
+          skipspace(&p);
+          i = i + 1;
+          if (*p == 0) break;
+          }
+        controlnvals[nlayers] = i;
+        /* [SS] 2015-08-23 */
+        if (controlnvals[nlayers] < 2) event_error("empty %%MIDI controlstring"); 
+        controlcombo = 0; /* turn off controlcombo */
+        done = 1;
+        }
+     }
+
+  /* [SS] 2015-08-20 */
+  else if (strcmp(command, "controlcombo") == 0) {
+     controlcombo = 1;
+     nlayers++;
+     done = 1;
+     }
+
+  else if( strcmp(command, "beataccents") == 0) {
     beataccents = 1;
     beatmodel = 0; /* [SS] 2011-07-04 */
     done = 1;
   }
-  if( strcmp(command, "nobeataccents") == 0) {
+
+  else if( strcmp(command, "nobeataccents") == 0) {
     beataccents = 0;
     done = 1;
   }
 
-  if (strcmp(command,"portamento") == 0) {
+  else if (strcmp(command,"portamento") == 0) {
    int chan, datum;
    char data[4];
    p = select_channel(&chan, p);
@@ -2079,7 +2190,7 @@ int noteson;
    done = 1;
    } 
 
-  if (strcmp(command,"noportamento") == 0) {
+  else if (strcmp(command,"noportamento") == 0) {
    int chan;
    char data[4];
    p = select_channel(&chan, p);
@@ -2090,7 +2201,7 @@ int noteson;
    done = 1;
    }
 
-  if (strcmp(command, "pitchbend") == 0) {
+  else if (strcmp(command, "pitchbend") == 0) {
     int chan, n, datum;
     char data[2];
 
@@ -2115,9 +2226,9 @@ int noteson;
        delta_time = 0L;
        } 
     done = 1;
-  };
+  }
 
-  if (strcmp(command, "snt") == 0) {  /*single note tuning */
+  else if (strcmp(command, "snt") == 0) {  /*single note tuning */
     int midikey;
     float midipitch;
     midikey = readnump(&p);
@@ -2127,21 +2238,24 @@ int noteson;
     }
    
 
-  if (strcmp(command,"chordattack") == 0) {
+  else if (strcmp(command,"chordattack") == 0) {
     staticnotedelay = readnump(&p);
     notedelay = staticnotedelay;
     done = 1;
-  };
-  if (strcmp(command,"randomchordattack") == 0) {
+  }
+
+  else if (strcmp(command,"randomchordattack") == 0) {
     staticchordattack = readnump(&p);
     chordattack = staticchordattack;
     done = 1;
-  };
-  if (strcmp(command,"drummap") == 0) {
+  }
+
+  else if (strcmp(command,"drummap") == 0) {
     parse_drummap(&p);
     done = 1;
-  };
-  if (strcmp(command,"ptstress") == 0) {  /* [SS] 2011-07-04 */
+  }
+
+  else if (strcmp(command,"ptstress") == 0) {  /* [SS] 2011-07-04 */
      skipspace(&p);
      strncpy(inputfile,p,250);
      if (verbose) printf("ptstress file = %s\n",inputfile);
@@ -2152,11 +2266,22 @@ int noteson;
      if (stressmodel && beatmodel != stressmodel) beatmodel=stressmodel;
     }
 
-  if (strcmp(command,"stressmodel") == 0) { /* [SS] 2011-08-19 */
+  else if (strcmp(command,"stressmodel") == 0) { /* [SS] 2011-08-19 */
     if (barflymode == 0) 
         printf("**warning stressmodel is ignored without -BF runtime option\n");
     done = 1;
     }
+
+  /* [SS] 2015-09-08 */
+  else if (strcmp(command,"volinc") == 0) {
+      single_velocity_inc = readsnump(&p);
+      done = 1;
+      }
+
+  else if (strcmp(command,"vol") == 0) {
+      single_velocity = readnump(&p);
+      done = 1;
+      }
 
   if (done == 0) {
     char errmsg[80];
@@ -2509,10 +2634,10 @@ static void starttrack(int tracknum)
        channel = findchannel();
        trackdescriptor[tracknum].midichannel = channel;
        if(verbose) printf("assigning channel %d to track %d\n",channel,tracknum);
-       channel_in_use[channel];
+       channel_in_use[channel] = 1; /* [SS] 2015-08-04 */
        }
     else
-       channel_in_use[channel];
+       channel_in_use[channel] = 1; /* [SS] 2015-08-04 */
        
     if (retuning) midi_re_tune (channel); /* [SS] 2012-04-01 */
   } else {
@@ -2526,10 +2651,10 @@ static void starttrack(int tracknum)
     gchord.base = 48;
     gchord.vel = 75;
     fun.chan = findchannel();
-    channel_in_use[fun.chan] = 1; /* [SS] 2015-03-27 */
+    channel_in_use[fun.chan] = 1; /* [SS] 2015-03-27  2015-08-04 */
     if(verbose) printf("assigning channel %d to bass voice\n",fun.chan);
     gchord.chan = findchannel();
-    channel_in_use[gchord.chan]; /* [SS] 2015-03-27 */
+    channel_in_use[gchord.chan] = 1; /* [SS] 2015-03-27 2015-08-04 */
     if(verbose) printf("assigning channel %d to chordal accompaniment\n",gchord.chan);
     if (retuning) midi_re_tune (fun.chan); /* [SS] 2012-04-01 */
     if (retuning) midi_re_tune (gchord.chan); /* [SS] 2012-04-01 */
@@ -2541,7 +2666,7 @@ static void starttrack(int tracknum)
   if (droneon) {
     drone.event =0;
     drone.chan = findchannel();
-    channel_in_use[drone.chan]; /* [SS] 2015-03-27 */
+    channel_in_use[drone.chan] = 1; /* [SS] 2015-03-27  2015-08-04 */
     if(verbose) printf("assigning channel %d to drone\n",drone.chan);
     if (retuning) midi_re_tune (drone.chan); /* [SS] 2012-04-01 */
     }
@@ -2670,10 +2795,14 @@ int xtrack;
   gchordbarcount=0;
   effecton=0;  /* [SS] 2012-12-11 */
   bendtype = 1; /* [SS] 2014-09-11 */
+  single_velocity_inc = 0;
+  single_velocity = -1;
 
   bendstate = 8192; /* [SS] 2014-09-10 */
   for (i=0;i<16; i++) benddata[i] = 0;
   bendnvals = 0;
+  /* [SS] 2015-08-29 */
+  for (i=0;i<MAXLAYERS;i++) controlnvals[i] = 0;
 
 /* [SS] 2014-09-10 */
   if (karaoke) {
@@ -2886,7 +3015,8 @@ int xtrack;
         /* set up note off */
        if (channel == 9) 
         addtoQ(num[j], denom[j], drum_map[pitch[j]], channel, 0, -totalnotedelay -1);
-        else addtoQ(num[j], denom[j], pitch[j] + transpose +global_transpose, channel, 0, -totalnotedelay -1);
+        else addtoQ(num[j], denom[j], pitch[j] + transpose +global_transpose, channel, effecton, -totalnotedelay -1);
+        effecton = 0;
       };
       break;
     case OLDTIE:
@@ -3272,7 +3402,10 @@ int xtrack;
        break;
 
     case EFFECT: 
-       effecton = bendtype;  /* [SS] 2012-12-11 2014-09-11 */
+       if (pitch[j] == 1) /* [SS] 2015-07-26 */
+           effecton = bendtype;  /* [SS] 2012-12-11 2014-09-11 */
+       else
+           effecton = 10;
        break;
     
     default:
@@ -3310,7 +3443,7 @@ int i,j;
 for (i=from;i<=to;i++)
   {
   j = feature[i]; 
-  if (j<0 || j>73) printf("illegal feature[%d] = %d\n",i,j); /* [SS] 2012-11-25 */
+  if (j<0 || j>74) printf("illegal feature[%d] = %d\n",i,j); /* [SS] 2012-11-25 */
   else printf("%d %s   %d %d %d %d %d %d\n",i,featname[j],pitch[i],bentpitch[i],decotype[i],num[i],denom[i],charloc[i]);
   }
 }

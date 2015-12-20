@@ -37,9 +37,9 @@
 
 #define SIZE_ABBREVIATIONS ('Z' - 'H' + 1)
 
-
+/* [SS] 2015-09-28 changed _snprintf_s to _snprintf */
 #ifdef _MSC_VER
-#define snprintf _snprintf_s
+#define snprintf _snprintf
 #endif
 
 
@@ -317,9 +317,9 @@ isnumberp (p)
 {
   char **c;
   c = p;
-  while (((int) **c != ' ') && ((int) **c != TAB) && (int) **c != '\0')
+  while (( **c != ' ') && ( **c != TAB) &&  **c != '\0')
     {
-      if (((int) *c >= '0') && ((int) *c <= '9'))
+      if (((int) *c >= 0) && ((int) *c <= 9))
 	*c = *c + 1;
       else
 	return 0;
@@ -411,6 +411,7 @@ readsig (a, b, sig)
 /* read time signature (meter) from M: field */
 {
   int t;
+  char c; /* [SS] 2015-08-19 */
 
   /* [SS] 2012-08-08  cut time (C| or c|) is 2/2 not 4/4 */
   if ((*(*sig + 1) == '|') && ((**sig == 'C') || (**sig == 'c')))
@@ -427,6 +428,14 @@ readsig (a, b, sig)
       return;
     };
   *a = readnump (sig);
+
+  /* [SS] 2015-08-19 */
+  while ((int) **sig == '+') {
+    *sig = *sig + 1;
+    c = readnump (sig);
+    *a = *a + c;
+    }
+
   if ((int) **sig != '/')
     {
       event_error ("Missing / ");
@@ -1056,15 +1065,16 @@ parseother (s, word, gotother, other, maxsize)	/* [SS] 2011-04-18 */
      char *word;
      int *gotother;
      char other[];
+     int maxsize;
 {
   if (word[0] != '\0')
     {
-      if (strlen (other) < maxsize)
+      if ( (int) strlen (other) < maxsize) /* [SS] 2015-10-08 added (int) */
 	strncat (other, word, maxsize);
       if (**s == '=')
 	{			/* [SS] 2011-04-19 */
 	  *s = readword (word, *s);
-	  if (strlen (other) < maxsize)
+	  if ( (int) strlen (other) < maxsize) /* [SS] 2015-10-08 added (int) */
 	    strncat (other, word, maxsize);
 	}
       strncat (other, " ", maxsize);	/* in case other codes follow */
@@ -1709,8 +1719,7 @@ readstr (out, in, limit)
 
 /* [SS] 2015-06-01 required for parse_mididef() in store.c */
 /* Just like readstr but also allows anything except white space */
-void
-readaln (out, in, limit)
+int readaln (out, in, limit)
      char out[];
      char **in;
      int limit;
@@ -1726,6 +1735,7 @@ readaln (out, in, limit)
       *in = *in + 1;
     };
   out[i] = '\0';
+  return i;
 }
 
 void
@@ -1834,6 +1844,7 @@ parse_tempo (place)
   event_tempo (n, a, b, relative, pre_string, post_string);
 }
 
+void appendfield(char *); /* links with store.c and yapstree.c */
 
 void append_fieldcmd (key, s)  /* [SS] 2014-08-15 */
 char key;
@@ -2034,7 +2045,12 @@ parsefield (key, field)
 	      };
 	    if ((num != 0) && (denom != 0))
 	      {
-		event_timesig (num, denom, 1);
+		/* [code contributed by Larry Myerscough 2015-11-5]
+		 * Specify checkbars = 1 for numeric time signature
+		 * or checkbars = 2 for 'common' time signature to
+		 * remain faithful to style of input abc file.
+		 */
+		event_timesig (num, denom, 1 + ((*place == 'C') || (*place == 'c')));
 	      };
 	  };
 	break;

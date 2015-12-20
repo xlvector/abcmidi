@@ -33,6 +33,7 @@ extern int time_num, time_denom;
 extern int verbose;
 extern int beatmodel, stressmodel;
 extern char timesigstring[16];	/* from parseabc.c */
+extern int *checkmalloc(int size);
 
 void reduce (int *, int *);
 
@@ -499,7 +500,6 @@ read_custom_stress_file (char *filename)
   int nseg, nval;
   int gain;
   float expand;
-  char **p;
   int i, j;
   init_stresspat ();
   inhandle = fopen (filename, "r");

@@ -5,33 +5,38 @@
 
 !include <win32.mak>
 
-comp	= $(cc) /wd4996 -D_CRT_SECURE_NO_WARNINGS $(cdebug) $(cflags) $(cvars)
+# $(cvars) static link
+# $(cvarsdll) dynamically link
+# add -O2 to end of line for speed optimization
+# add -O1 for size optimization
+#comp	= $(cc) /wd4996 -D_CRT_SECURE_NO_WARNINGS  $(cflags) $(cvars)
+comp	= $(cc) /wd4996 -D_CRT_SECURE_NO_WARNINGS  $(cflags) $(cvarsdll)
 
 #all:	abc2midi midi2abc abc2abc mftext yaps midicopy abcmatch
 
 all:	abc2midi.exe midi2abc.exe abc2abc.exe mftext.exe yaps.exe midicopy.exe abcmatch.exe
 
 
-abc2midi.exe:	parseabc.obj store.obj genmidi.obj midifile.obj queues.obj parser2.obj stresspat.obj -lm
-	$(link) $(ldebug) $(conflags) -out:abc2midi.exe  parseabc.obj store.obj genmidi.obj queues.obj parser2.obj midifile.obj stresspat.obj
+abc2midi.exe:	parseabc.obj store.obj genmidi.obj midifile.obj queues.obj parser2.obj stresspat.obj 
+	$(link) $(conflags) -out:abc2midi.exe  parseabc.obj store.obj genmidi.obj queues.obj parser2.obj midifile.obj stresspat.obj
 
 abcmatch.exe:	abcmatch.obj matchsup.obj parseabc.obj
-	$(link) $(ldebug) $(conflags) -out:abcmatch.exe  abcmatch.obj matchsup.obj parseabc.obj
+	$(link)  $(conflags) -out:abcmatch.exe  abcmatch.obj matchsup.obj parseabc.obj
 
 midi2abc.exe:	midifile.obj midi2abc.obj
-	$(link) $(ldebug) $(conflags) -out:midi2abc.exe  midifile.obj midi2abc.obj
+	$(link)  $(conflags) -out:midi2abc.exe  midifile.obj midi2abc.obj
 
 abc2abc.exe:	parseabc.obj toabc.obj
-	$(link) $(ldebug) $(conflags) -out:abc2abc.exe  parseabc.obj toabc.obj
+	$(link) $(conflags) -out:abc2abc.exe  parseabc.obj toabc.obj
 
 mftext.exe:	midifile.obj mftext.obj crack.obj
-	$(link) $(ldebug) $(conflags) -out:mftext.exe  midifile.obj mftext.obj crack.obj
+	$(link)  $(conflags) -out:mftext.exe  midifile.obj mftext.obj crack.obj
 
 midicopy.exe:	midicopy.obj
-	$(link) $(ldebug) $(conflags) -out:midicopy.exe  midicopy.obj
+	$(link)  $(conflags) -out:midicopy.exe  midicopy.obj
 
 yaps.exe:	parseabc.obj yapstree.obj drawtune.obj debug.obj pslib.obj position.obj parser2.obj
-	$(link) $(ldebug) $(conflags) -out:yaps.exe  parseabc.obj yapstree.obj drawtune.obj debug.obj position.obj pslib.obj parser2.obj $(conlibs)
+	$(link)  $(conflags) -out:yaps.exe  parseabc.obj yapstree.obj drawtune.obj debug.obj position.obj pslib.obj parser2.obj $(conlibs)
 
 
 abcmatch.obj:	abcmatch.c abc.h

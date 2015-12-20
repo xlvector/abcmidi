@@ -164,6 +164,7 @@ void mfread()     /* The only non-static function in this file. */
 
 
 void mfreadtrk(itrack)     /* The only non-static function in this file. */
+int itrack;
 {
   int track,ok;
   if ( Mf_getc == NULLFUNC )
@@ -1027,7 +1028,7 @@ eputc(kk);  /* MIDI key  0 - 127 */
 number = (int) midipitch;
 fraction = midipitch - (float) number;
 if (fraction < 0.0) fraction = -fraction;
-intfraction = fraction*16384;
+intfraction = (int) fraction*16384;
 xx = 0x7f & number;
 yy = intfraction/128;
 zz = intfraction % 128;

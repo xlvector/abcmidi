@@ -46,7 +46,7 @@
  * based on public domain 'midifilelib' package.
  */
 
-#define VERSION "2.95 February 22 2015"
+#define VERSION "2.99 October 18 2015"
 #define SPLITCODE
 
 /* Microsoft Visual C++ Version 6.0 or higher */
@@ -356,7 +356,7 @@ struct anote* p;
 void addnote(p, ch, v)
 /* add structure for note */
 /* used when parsing MIDI file */
-int p, v;
+int p, ch, v;
 {
   struct listx* newx;
   struct anote* newnote;
@@ -752,6 +752,7 @@ int leng;
 
 
 void print_txt_noteon(chan, pitch, vol)
+int chan, pitch, vol;
 {
 int start_time;
 int initvol;
@@ -775,6 +776,7 @@ else {
 
 
 void print_txt_noteoff(chan, pitch, vol)
+int chan, pitch, vol;
 {
 int start_time,initvol;
 
@@ -919,6 +921,7 @@ void mftxt_trackstart()
 
 
 void mftxt_noteon(chan,pitch,vol)
+int chan, pitch, vol;
 {
   char *key;
 /*
@@ -926,12 +929,13 @@ void mftxt_noteon(chan,pitch,vol)
 */
   if (prtime()) return;
   key = pitch2key(pitch);
-  printf("Note on  %2d  %3s %3d",chan+1, key,vol);
+  printf("Note on  %2d %2d (%3s) %3d",chan+1, pitch, key,vol);
   if (chan == 9) pitch2drum(pitch);
   printf("\n");
 }
 
 void mftxt_noteoff(chan,pitch,vol)
+int chan, pitch, vol;
 {
   char *key;
 /*
@@ -939,10 +943,12 @@ void mftxt_noteoff(chan,pitch,vol)
 */
   if (prtime()) return;
   key = pitch2key(pitch);
-  printf("Note off %2d  %3s %3d\n",chan+1,key,vol);
+  printf("Note off %2d %2d  (%3s) %3d\n",chan+1,pitch, key,vol);
 }
 
+
 void mftxt_pressure(chan,pitch,press)
+int chan, pitch, press;
 {
   char *key;
   if (prtime()) return;
@@ -952,21 +958,25 @@ void mftxt_pressure(chan,pitch,press)
 
 
 void mftxt_pitchbend(chan,lsb,msb)
+int chan, lsb, msb;
 {
  float bend;
+ int pitchbend;
 /*
   if (onlychan >=0 && chan != onlychan) return;
 */
   if (prtime()) return;
-  /* [SS] 2014-01-05 */
-  bend =  (float) ((msb*128 + lsb) - 8192);
-  bend = bend/4096.0;
-  printf("Pitchbnd %2d msb=%d lsb=%d  bend = %6.4f\n",chan+1,msb,lsb,bend);
+  /* [SS] 2014-01-05  2015-08-04*/
+  pitchbend = (msb*128 + lsb);
+  bend =  (float) (pitchbend - 8192);
+  bend = bend/4096.0f;
+  printf("Pitchbend %2d %d  bend = %6.4f\n",chan+1,pitchbend,bend);
 }
 
 
 
 void mftxt_program(chan,program)
+int chan, program;
 {
 static char *patches[] = {
  "Acoustic Grand","Bright Acoustic","Electric Grand","Honky-Tonk", 
@@ -1020,6 +1030,7 @@ static char *patches[] = {
    }
 
 void mftxt_chanpressure(chan,press)
+int chan, press;
 {
   prtime();
   printf("Chanpres %2d pressure=%d\n",chan+1,press);
@@ -1027,6 +1038,7 @@ void mftxt_chanpressure(chan,press)
 
 
 void mftxt_parameter(chan,control,value)
+int chan, control, value;
 {
   static char *ctype[] = {
  "Bank Select",       "Modulation Wheel",     /*1*/
@@ -1102,6 +1114,7 @@ void mftxt_parameter(chan,control,value)
 
 
 void mftxt_metatext(type,leng,mess)
+int type, leng;
 char *mess;
 {
   static char *ttype[] = {
@@ -1136,6 +1149,7 @@ char *mess;
 }
 
 void mftxt_keysig(sf,mi)
+int sf, mi;
 {
   static char *major[] = {"Cb", "Gb", "Db", "Ab", "Eb", "Bb", "F",
     "C", "G", "D", "A", "E", "B", "F#", "C#"};
@@ -1159,6 +1173,7 @@ long ltempo;
 }
 
 void mftxt_timesig(nn,dd,cc,bb)
+int nn, dd, cc, bb;
 {
   int denom = 1;
   while ( dd-- > 0 )
@@ -1170,6 +1185,7 @@ void mftxt_timesig(nn,dd,cc,bb)
 }
 
 void mftxt_smpte(hr,mn,se,fr,ff)
+int hr, mn, se, fr, ff;
 {
   if (prtime()) return;
   printf("Metatext SMPTE, %d:%d:%d  %d=%d\n", hr,mn,se,fr,ff);

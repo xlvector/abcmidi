@@ -1,11 +1,11 @@
 abcMIDI :   abc <-> MIDI conversion utilities
 
-midi2abc version 2.95 February 22 2015
-abc2midi version 3.64 July 15 2015
-abc2abc  version 1.81 July 02 2015
-yaps     version 1.62 May 13 2015
-abcmatch version 1.67 May 13 2015
-midicopy version 1.18 October 01 2013
+midi2abc version 2.99 October 18 2015
+abc2midi version 3.84 December 19 2015
+abc2abc  version 1.84 November 10 2015
+yaps     version 1.63 November 15 2015
+abcmatch version 1.70 November 15 2015
+midicopy version 1.22 November 15 2015
 
 24th January 2002
 
@@ -14,10 +14,10 @@ J.R.Allwright@westminster.ac.uk
 University of Westminster,
 London, UK
 
-June 2015
+October 2015
 
 Seymour Shlien
-seymour.shlien@crc.ca
+fy733@ncf.ca
 
 This is free software. You may copy and re-distribute it under the terms of 
 the GNU General Public License version 2 or later, which is available from
@@ -496,7 +496,7 @@ for the executables to run.
 Bug reports
 
 Please report any bugs you find in abc2midi, midi2abc, midicopy, or 
-abcmatch, abc2abc to seymour.shlien@crc.ca (preferably with 
+abcmatch, abc2abc to fy733@ncf.ca (preferably with 
 an example so that I can replicate the problem). Better still, send 
 me the repaired source files which fix the problem! If you add your
 own features to the code that other people might want to use then let 
