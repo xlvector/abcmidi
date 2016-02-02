@@ -2374,41 +2374,57 @@ int j;
     case 'g':
       if(gchordnotes_size>0 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[0], 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'h':
       if(gchordnotes_size >1 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[1], 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'i':
       if(gchordnotes_size >2 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[2], 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'j':
       if(gchordnotes_size >3 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[3], 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'G':
       if(gchordnotes_size>0 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[0]-12, 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'H':
       if(gchordnotes_size >1 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[1]-12, 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'I':
       if(gchordnotes_size >2 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[2]-12, 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'J':
       if(gchordnotes_size >3 && g_started && gchords)
         save_note(g_num*len, g_denom, gchordnotes[3]-12, 8192, gchord.chan, gchord.vel); 
+      else /* [SS] 2016-01-03 */
+        save_note(g_num*len, g_denom, gchordnotes[gchordnotes_size], 8192, gchord.chan, gchord.vel); 
       break;
 
     case 'x':

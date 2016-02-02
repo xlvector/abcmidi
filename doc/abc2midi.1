@@ -2,7 +2,7 @@
 .SH NAME
 \fBabc2midi\fP \- converts abc file to MIDI file(s)
 .SH SYNOPSIS
-abc2midi \fIinfile\fP [\fIrefnum\fP] [\-c] [\-v] [\-ver] [\-t] [\-n limit] [\-RS] [\-quiet] [\-silent] [\-Q tempo] [\-NFNP] [\-NFER] [\-NGRA] [\-STFW] [\-OCC] [\-NCOM] [\-HARP] [\-BF] [\-TT] [\-o outfile] \-CSM [filename]
+abc2midi \fIinfile\fP [\fIrefnum\fP] [\-c] [\-v] [\-ver] [\-t] [\-n limit] [\-CS] [\-quiet] [\-silent] [\-Q tempo] [\-NFNP] [\-NFER] [\-NGRA] [\-STFW] [\-OCC] [\-NCOM] [\-HARP] [\-BF] [\-TT] [\-o outfile] \-CSM [filename]
 .SH DESCRIPTION
  The default action is to write a MIDI file for each abc tune
  with the filename <stem>N.mid, where <stem> is the filestem
@@ -27,8 +27,8 @@ prints version number and exits
 .B -t
 selects filenames derived from tune titles
 .TP
-.B -RS
-use 3:1 instead of 2:1 for broken rhythms
+.B -CS
+use 2:1 instead of 3:1 for broken rhythms
 .TP
 .B -quiet
 Suppresses some common warnings.

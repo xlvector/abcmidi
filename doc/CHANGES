@@ -11999,3 +11999,88 @@ Abc2midi: bug fix - calculation of equal temperament scale was changed
 on October 08 2015. It has now been restored in store.c thanks to
 Hudson Lacerda.
 
+
+
+December 31 2015
+
+Abc2midi bug:
+
+The following tune causes abc2midi to crash when running with -BF parameter.
+
+X:1
+T: Missing R: field
+M: 2/4
+L: 1/8
+K: G
+%%MIDI stressmodel 2
+CDEF|ABcd|
+
+abc2midi crash.abc -BF 2
+3.84 December 19 2015 abc2midi
+Floating point exception
+
+Fix: startfile() in store.c initializes rhythmdesignator to an empty
+string. apply_bf_stressfactors() in store.c ensures that rhythmdesignator is
+set before allowing the function to continue. The function
+load_stress_parameters() in stresspat.c now has an error return and reports
+an unidentified rhythmdesignator to apply_bf_stressfactors().
+
+
+January 02 2016
+
+Abc2midi > and < action:
+
+In the past broken notes indicated by A>B and A<B did not expand into
+A3/2 B1/2 and A1/2 B3/2 but instead were treated as (3A-AB and (3AB-B
+unless abc2midi was run with the -RS option. In order to be compliant
+with the ABC standards 1.6, 2.0, 2.1 and 2.2. The behaviour has been
+reversed. Now the default ratio is 3:1 instead of 2:1.
+
+X:1
+T: broken
+M: 4/4
+L: 1/4
+K: G
+A3/2 B/ A/ B3/2|A>B A<B|
+
+Thus for the above example, both bars will now sound the same unless
+abc2midi is run with the -RS option. The command
+%%MIDI ratio 2 1
+still works as before.
+
+Implementation:
+All changes are restricted to the file store.c.
+global variable ratio_standard set to 0 instead of -1
+default_ratio_a and default_ratio_b now set to 2 and 6
+In startfile() the actions following if(ratio_standard == -1)
+was modified. In event that R: hornpipe occurs, the
+default_ratios are set to 2 and 4 (in event_field).
+Changed runtime parameter -RS to -CS to warn users of the
+change.
+
+
+January 03 2016
+
+Abc2midi - improved gchord generator
+
+When the %%MIDI gchord string is used to create Alberti Bass, (eg ghighi),
+a situation could arise where there are not enough notes in the guitar
+chord to produce a note. For example,
+
+X:1
+T: gchord
+M: 6/8
+L: 1/8
+K: G
+% "G" expands to G,B,D so g --> G, h --> B, and i --> D
+%%MIDI gchord ghighi
+"G" G6|G6|\
+% "G5" expands to G,D so g--> G, and h --> D  but  i --> does not map
+"G5" G6|G6|
+
+i does not map producing a gap in the Alberti Bass
+
+Fix: dogchords() in genmidi.c was modified to map to the last
+note in the gchord chord in this situation to prevent a gap.
+In the above example i would also map into D.
+

@@ -419,7 +419,8 @@ stress_locator (char *rhythmdesignator, char *timesigstring)
   return -1;
 }
 
-void
+/* [SS] 2015-12-31 load_stress_parameters  returns 0 or -1 */
+int
 load_stress_parameters (char *rhythmdesignator)
 {
   int n, i, index, nval;
@@ -434,7 +435,7 @@ load_stress_parameters (char *rhythmdesignator)
   if (strlen (rhythmdesignator) < 2)
     {
       beatmodel = 0;
-      return;
+      return -1;
     }
   index = stress_locator (rhythmdesignator, timesigstring);
   if (index == -1)
@@ -449,7 +450,7 @@ load_stress_parameters (char *rhythmdesignator)
 	}
       printf ("\n");
       beatmodel = 0;
-      return;
+      return -1;
     }
 
   if (stressmodel == 0)
@@ -484,6 +485,7 @@ load_stress_parameters (char *rhythmdesignator)
 */
     }
 /*printf("maxdur = %f\n",maxdur);*/
+return 0;
 }
 
 

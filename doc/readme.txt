@@ -1,7 +1,7 @@
 abcMIDI :   abc <-> MIDI conversion utilities
 
-midi2abc version 2.99 October 18 2015
-abc2midi version 3.84 December 19 2015
+midi2abc version 2.99 October  18 2015
+abc2midi version 3.87 January  03 2015
 abc2abc  version 1.84 November 10 2015
 yaps     version 1.63 November 15 2015
 abcmatch version 1.70 November 15 2015
@@ -14,7 +14,7 @@ J.R.Allwright@westminster.ac.uk
 University of Westminster,
 London, UK
 
-October 2015
+January 2016
 
 Seymour Shlien
 fy733@ncf.ca
@@ -244,7 +244,7 @@ Usage : abc2midi <abc file> [reference number] [-c] [-v] [-o filename]
         -o <filename>  selects output filename
         -t selects filenames derived from tune titles
         -n <limit> set limit for length of filename stem
-        -RS use 3:1 instead of 2:1 for broken rhythms
+        -CS use 2:1 instead of 3:1 for broken rhythms
         -quiet suppress some common warnings
         -silent suppresses other messages
         -Q <tempo> in quarter notes/minute
@@ -273,8 +273,8 @@ Usage : abc2midi <abc file> [reference number] [-c] [-v] [-o filename]
  handle the older notation, include the -OCC flag; however the
  program will not accept the standard notation for decorations.
  Broken rhythms indicated by > or < (eg. A > B) assume a
- the hornpipe ratio of 2:1 rather than 3:1. To change it to
- 3:1 include the -RS flag.  
+ the hornpipe ratio of 3:1.  To change it to the Celtic ratio
+ 3:1 include the -CS flag.  
 
 
 Features :

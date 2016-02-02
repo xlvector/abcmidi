@@ -184,7 +184,7 @@ int main()
 
  */
 
-#define VERSION "3.84 December 19 2015 abc2midi" 
+#define VERSION "3.87 January 03 2016 abc2midi" 
 
 /* enables reading V: indication in header */
 #define XTEN1 1
@@ -231,7 +231,7 @@ extern char* strchr();
 extern void reduce();
 #endif
 /*int snprintf(char *str, size_t size, const char *format, ...);*/
-void load_stress_parameters(char *);
+int load_stress_parameters(char *);
 
 #define MAXLINE 500
 #define INITTEXTS 20
@@ -397,7 +397,8 @@ int namelimit;
 int xmatch;
 int sf, mi;
 int gchordvoice, wordvoice, drumvoice, dronevoice;
-int ratio_standard = -1; /* flag corresponding to -RS parameter */
+/* [SS] 2016-01-02 ratio_standard changed to 0 */
+int ratio_standard = 0; /* flag corresponding to -RS parameter */
 /* when ratio_standard != -1 the ratio for a>b is 3:1 instead of 2:1 */
 int quiet = -1; /* if not -1 many common warnings and error messages */
                 /* are suppressed.                                   */
@@ -991,7 +992,7 @@ char **filename;
     printf("abc2midi version %s\n",VERSION);
     printf("Usage : abc2midi <abc file> [reference number] [-c] [-v] ");
     printf("[-o filename]\n");
-    printf("        [-t] [-n <value>] [-RS] [-NFNP] [-NCOM] [-NFER] [-NGRA] [-HARP]\n");
+    printf("        [-t] [-n <value>] [-CS] [-NFNP] [-NCOM] [-NFER] [-NGRA] [-HARP]\n");
     printf("        [reference number] selects a tune\n");
     printf("        -c  selects checking only\n");
     printf("        -v  selects verbose option\n");
@@ -999,7 +1000,7 @@ char **filename;
     printf("        -o <filename>  selects output filename\n");
     printf("        -t selects filenames derived from tune titles\n");
     printf("        -n <limit> set limit for length of filename stem\n");
-    printf("        -RS use 3:1 instead of 2:1 for broken rhythms\n");
+    printf("        -CS use 2:1 instead of 3:1 for broken rhythms\n"); /* [SS] 2016-01-02 */
     printf("        -quiet suppress some common warnings\n");
     printf("        -silent suppresses most messages\n");
     printf("        -Q default tempo (quarter notes/minute)\n");
@@ -1099,11 +1100,16 @@ outbase = addstring(argv[1]); /* [RM] 2010-11-21 */
      } 
  }
 
-  ratio_standard = getarg("-RS", argc, argv);
+  ratio_standard = getarg("-CS", argc, argv); /* [SS] 2016-01-02 */
   quiet  = getarg("-quiet", argc, argv);
   dotune = 0;
   parseroff();
   setup_chordnames();
+
+  /* [SS] 2016-01-02 */
+  if (getarg("-RS",argc,argv) != -1) {
+      event_warning("use -CS to get Celtic broken rhythm");
+      }
   
   if (barflymode) init_stresspat();  /* [SS] 2011-08-18 */
 }
@@ -2392,7 +2398,7 @@ int default_middle_c = 60;
 int default_retain_accidentals = 2; /* [SS] 2015-08-18 */
 int default_fermata_fixed = 0;
 int default_ratio_a = 2;
-int default_ratio_b = 4;
+int default_ratio_b = 6;
 
 void event_specific_in_header(package, s)
 /* package-specific command found i.e. %%NAME */
@@ -2572,6 +2578,8 @@ char *f;
             (strncmp(p, "hornpipe", 8) == 0)) &&
              barflymode ==0) {   /* [SS] 2011-08-19 */
           hornpipe = 1;
+          ratio_a = 2; /* [SS] 2016-01-02 */
+          ratio_b = 4;
         };
       };
       break;
@@ -5386,9 +5394,20 @@ static void apply_bf_stress_factors () {
   char inputfile[64];
   char *p;
   int barnumber;
-  load_stress_parameters(rhythmdesignator);
+  if (verbose) 
+      printf("rhythmdesignator = %s\n",rhythmdesignator);
+  if (rhythmdesignator[0] == '\0') {
+      event_error("No R: in header, cannot apply Barfly model");
+      return;
+      }
+  j = load_stress_parameters(rhythmdesignator);
+  /* [SS] 2015-12-31 */
+  if (j < 0) {
+      event_error("invalid R: designator");
+      return;
+      }
   if (verbose)
-  printf("beat_modifer using segment size %d/%d\n",segnum,segden);
+      printf("beat_modifer using segment size %d/%d\n",segnum,segden);
   j = 0;
   barnumber = 0;
   while (j < notes) {
@@ -5473,12 +5492,14 @@ static void startfile()
   v1index = -1; /* [SS] 2010-02-07 */
   propagate_accidentals = default_retain_accidentals;
   fermata_fixed = default_fermata_fixed;
+  /* [SS] 2016-01-02 */
   if (ratio_standard == -1) {
     ratio_a = default_ratio_a;
     ratio_b = default_ratio_b;
   } else {
-     ratio_a = 2;
-     ratio_b = 6;
+    /* [SS] 2016-01-02 use celtic ratio for swing */
+    ratio_a = 2;
+    ratio_b = 4;
    }
   wcount = 0;
   parts = -1;
@@ -5498,6 +5519,7 @@ static void startfile()
   drumvoice = 0;
   wordvoice = 0;
   notesdefined = 1; /* [SS] 2012-07-02 */
+  rhythmdesignator[0] = '\0'; /* [SS] 2015-12-31 */
 }
 
 void setbeat()
