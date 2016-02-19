@@ -19,22 +19,22 @@
 > June 2015
 > 
 > Seymour Shlien
-> seymour.shlien@crc.ca
+> fy733@ncf.ca
 
-This is free software. You may copy and re-distribute it under the terms of the GNU General Public License version 2 or later, which is available from the Free Software Foundation (and elsewhere). 
+This is free software. You may copy and re-distribute it under the terms of the GNU General Public License version 2 or later, which is available from the Free Software Foundation (and elsewhere).
 
 This package is to be found on the web at
 
-<http://abc.sourceforge.net/abcMIDI/>
+[abc.sourceforge.net/abcMIDI](http://abc.sourceforge.net/abcMIDI/)
 
 (The latest versions for the time being is found on
-<ifdo.pugmarks.com/~seymour/runabc/top.html>.)
+[ifdo.pugmarks.com/~seymour/runabc/top.html](http://ifdo.pugmarks.com/~seymour/runabc/top.html).)
 
-Note, if you have difficulty compiling the package because you do not have snprintf see the note in [doc/CHANGES](doc/CHANGES) dated January 08 2005 (and also December 17 2004).
+Note, if you have difficulty compiling the package because you do not have snprintf see the note in [`doc/CHANGES`](doc/CHANGES) dated January 08 2005 (and also December 17 2004).
 
 These programs make use of the '`midifilelib`' public domain MIDI file utilities, available from
 
-<http://www.harmony-central.com/MIDI/midifilelib.tar.gz>
+[www.harmony-central.com/MIDI/midifilelib.tar.gz](http://www.harmony-central.com/MIDI/midifilelib.tar.gz)
 
 If you have the source distribution and intend to re-compile the code, read the file coding.txt.
 

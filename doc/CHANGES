@@ -12084,3 +12084,9 @@ Fix: dogchords() in genmidi.c was modified to map to the last
 note in the gchord chord in this situation to prevent a gap.
 In the above example i would also map into D.
 
+
+February 08 2015
+
+Abc2midi: changed dim9[5] to {0,3.6,9,13}, added sus2 and 7sus2
+(in store.c).
+

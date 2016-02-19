@@ -184,7 +184,7 @@ int main()
 
  */
 
-#define VERSION "3.87 January 03 2016 abc2midi" 
+#define VERSION "3.88 January 08 2016 abc2midi" 
 
 /* enables reading V: indication in header */
 #define XTEN1 1
@@ -812,7 +812,7 @@ static void setup_chordnames()
   static int list_maj9[5] = {0, 4, 7, 11, 2};
   static int list_M9[5] = {0, 4, 7, 11, 2};
   static int list_11[6] = {0, 4, 7, 10, 2, 5};
-  static int list_dim9[5] = {0, 4, 7, 10, 13};
+  static int list_dim9[5] = {0, 3, 6, 9, 13}; /* [SS] 2016-02-08 */
   static int list_sus[3] = {0, 5, 7};
   static int list_sus4[3] = {0, 4, 7}; /* [SS] 2015-07-08 */
   static int list_sus9[3] = {0, 2, 7};
@@ -843,6 +843,8 @@ static void setup_chordnames()
   addchordname("sus", 3, list_sus);
   addchordname("sus4", 3, list_sus4); /* [SS] 2015-07-08 */
   addchordname("sus9", 3, list_sus9);
+  addchordname("sus2", 3, list_sus9); /* [SS] 2015-07-08 */
+  addchordname("7sus2", 4, list_7sus9); /* [SS] 2015-07-08 */
   addchordname("7sus4", 4, list_7sus4);
   addchordname("7sus9", 4, list_7sus9);
   addchordname("5", 2, list_5);
