@@ -12084,3 +12084,27 @@ Fix: dogchords() in genmidi.c was modified to map to the last
 note in the gchord chord in this situation to prevent a gap.
 In the above example i would also map into D.
 
+
+February 08 2016
+
+Abc2midi: changed dim9[5] to {0,3.6,9,13}, added sus2 and 7sus2
+(in store.c).
+
+
+March 03 2016
+
+Abc2abc: K: none sets all following occurrences of K: field
+to K: none even when they occur in separate tunes.
+
+Analysis: the global variable nokey gets set by K: none,
+but is never reset. This is fine if you are using the -nokeyf or
+-nokeys runtime parameter which applies to all tunes but not
+what you want if you are dealing with a tune containing a
+K: none command.
+
+Fix: introduced a new global nokeysig initialized to 0
+into parseabc.c and toabc.c which responds to the abc2abc runtime
+parameters -nokeys and -nokeyf. In parsekey() in parseabc.c,
+the control variable nokey is initialized to nokeysig.
+
+ 

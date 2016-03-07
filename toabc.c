@@ -21,7 +21,7 @@
 
 /* back-end for outputting (possibly modified) abc */
 
-#define VERSION "1.84 November 10 2015 abc2abc"
+#define VERSION "1.85 March 03 2016 abc2abc"
 
 /* for Microsoft Visual C++ 6.0 or higher */
 #ifdef _MSC_VER
@@ -103,6 +103,7 @@ int drumchan=0; /* flag to suppress transposition */
 int noplus; /* flag for outputting !..! instructions instead of +...+ */
 
 extern int nokey; /* signals no key signature assumed */
+extern int nokeysig; /* signals -nokeys or -nokeysf option */
 extern int voicecodes ;  /* from parseabc.c */
 extern char voicecode[16][30]; /*for interpreting V: string */
  
@@ -626,10 +627,10 @@ char** filename;
   if (targ != -1) nodouble_accidentals = 1;
 
   targ = getarg("-nokeys",argc,argv);
-  if (targ != -1) nokey=1;
+  if (targ != -1) nokeysig=1; /* [SS] 2016-03-03 */
 
   targ = getarg("-nokeyf",argc,argv);
-  if (targ != -1) {nokey=1; useflats=1;}
+  if (targ != -1) {nokeysig=1; useflats=1;} /* [SS] 2016-03-03 */
 
   targ = getarg("-V", argc, argv);
   if (targ != -1) {
