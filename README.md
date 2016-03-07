@@ -2,12 +2,12 @@
 
 | Program | Version No. |  Date Updated |
 |:--------|:------------|:--------------|
-|midi2abc |version 2.96 |August 03 2015 |
-|abc2midi |version 3.70 |August 11 2015 |
-|abc2abc  |version 1.81 |July 02 2015   |
-|yaps     |version 1.62 |May 13 2015    |
-|abcmatch |version 1.67 |May 13 2015    |
-|midicopy |version 1.18 |October 01 2013|
+|midi2abc |version 2.99 |October 18 2015 |
+|abc2midi |version 3.88 |February 08 2015 |
+|abc2abc  |version 1.85 |March 03 2016 |
+|yaps     |version 1.63 |November 15 2015 |
+|abcmatch |version 1.70 |November 15 2015 |
+|midicopy |version 1.22 |November 15 2015 |
 
 > 24th January 2002
 > 
