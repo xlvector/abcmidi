@@ -1420,7 +1420,7 @@ index =index1 + modekeyshift[modeindex]; /* key for mode */
 setmap(sf,map); /* determine the flats and sharps for major key */
 if (index > 6) index -=7;
 strcpy(keysignature,notes[index]);
-/* propogate sharp or flat to key signature of mode */
+/* propagate sharp or flat to key signature of mode */
 if (map[index] == -1) strcat(keysignature,flatsharp[0]);
 if (map[index] == 1) strcat(keysignature,flatsharp[1]);
 /* add mode name */
@@ -2468,7 +2468,7 @@ void event_abbreviation(char symbol, char *string, char container)
 void event_acciaccatura()
 {
 /* to handle / in front of note in grace notes eg {/A} */
-/* abcm2ps compatability feature [SS] 2005-03-28 */
+/* abcm2ps compatibility feature [SS] 2005-03-28 */
 emit_string("/");
 }
 
@@ -2513,7 +2513,7 @@ char msg[40];
 
 int pitchof(char note, int accidental, int mult, int octave)
 /* finds MIDI pitch value for a given note taking into account the  */
-/* key signature if any and propogation of accidentals across a bar.*/
+/* key signature if any and propagation of accidentals across a bar.*/
 /* accidental = 0  implies a natural specified.                     */
 /* accidental = 1  implies one or more sharps indicated by mult.    */
 /* accidental =-1  implies one or more flats indicated by mult.     */

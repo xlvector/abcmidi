@@ -52,7 +52,7 @@ Features :
 * The key is chosen so as to minimize the number of accidentals. 
 Alternatively, the user can specify the key numerically (a positive number
 is the number of sharps, a negative number is minus the number of flats).
-* Note length can be set by specifiying the total number of bars or the 
+* Note length can be set by specifying the total number of bars or the 
 tempo of the piece. Alternatively the note length can be read from the file.
 However, by default it is deduced in a heuristic manner from the inter-note 
 distances.  This means that you do not have to use the MIDI clock as a 
@@ -178,7 +178,7 @@ note that midi2abc would extract would be a 1/16 th note.
 This is the basic quantum unit.  The L: note length is set
 by midi2abc on the basis of the time signature. For time 
 signatures less than 3/4 it uses an L: 1/16 and for others 
-it uses a length of 1/8. This convention was probably choosen 
+it uses a length of 1/8. This convention was probably chosen 
 so that midi2abc does not quantize the notes to a too fine 
 level producing outputs like  C2-C/4 D2-D/8 etc which would 
 be difficult to read.  For some music, this may be too coarse 

@@ -59,7 +59,7 @@ necessary to modify toabc.c and yapstree.c to fix the
 remaining problems.
 
 2003 April 27
-Guitar chords. The base note preceeded by a slash in the guitar
+Guitar chords. The base note preceded by a slash in the guitar
 chord may now  be in lower case as well as upper case. For example,
 "G/B" and "G/b" will both be treated the same way. This complies
 with the proposed abc standard 1.7.6 (abc-draft.txt) and avoids
@@ -220,7 +220,7 @@ was made in parseabc.c in parsefield() and parseline().
 
 2003 May 31
 
-Yaps crashes when it encounters text preceeded by an underscore
+Yaps crashes when it encounters text preceded by an underscore
 in a  guitar chord. For example 
 "G" AB/2B/2 "_quiet" DD| g/2g/2d/2d/2 |
 here yaps crashes when the function event_handle_gchord (in
@@ -1401,7 +1401,7 @@ abc2abc copies these indications, I have added a new
 flag, int strict, to the function isclef. The flag strict
 is 1 when no clef= was found and isclef is interpreting the
 given word. The flag strict is 0 when the given word is
-preceeded by clef=. When strict is 0, the function isclef
+preceded by clef=. When strict is 0, the function isclef
 will assume that the word is something meaningful even
 though it does not recognize it and pass a warning message.
 If strict is 1, isclef will not return words that it
@@ -2110,7 +2110,7 @@ note representation. Code for converting to the midi
 representation was borrowed from store.c and code for
 converting the midi representation back to the note
 representation was borrowed from midi2abc. There was
-a small incompatiblity between setmap representation
+a small incompatibility between setmap representation
 (character versus numeric representation) which had
 to be fixed.
 
@@ -2209,7 +2209,7 @@ causes an event_error.
 To make things more confusing there is another variable 'additive'
 which refers to an undocumented feature in  the P: command where the 
 symbol + and - indicates whether repeat marks in a part section are
-to be processed or ignored. I don't beleive this feature has ever 
+to be processed or ignored. I don't believe this feature has ever 
 been used.  I have therefore removed this feature to make the code easier
 to support. From now on additive is always assumed. In other words
 if a repeat section occurs in a PART it is always repeated. There
@@ -2308,12 +2308,12 @@ larger than 500000 bytes.
 October 24 2004
 
 More work was needed to correct problems with the abc2abc
--nokeys option. Propogation of accidentals across bars was
+-nokeys option. Propagation of accidentals across bars was
 not working.
 
 Fix for toabc.c: the pitchof() function was changed. The
 function setupkey() was eliminated and printpitch() was
-rewritten. It now handles propogation of accidentals 
+rewritten. It now handles propagation of accidentals 
 across bar lines but not between bar lines in event
 of a tied note. The latter case would involve considerable
 more development since no code for linking tied notes
@@ -2578,7 +2578,7 @@ Many changes were made to the tiefix function().
 Another local variable, chord_end was added. Chord_start
 and chord_end keep track of the feature index positions
 of the last chord scanned. If a TIE feature is immediately
-preceeded by a CHORDOFF or CHORDOFFEX feature, then
+preceded by a CHORDOFF or CHORDOFFEX feature, then
 that tie is stripped off and new ties are stuffed
 into the chord using the function patch_chordtie.
 Tiefix then backups into this chord so it can run
@@ -2886,7 +2886,7 @@ arrays.
 February 04 2005
 
 Abc2midi: It has been proposed that a new option be introduced
-that would propogate dynamic indications (pp, ff, etc) from
+that would propagate dynamic indications (pp, ff, etc) from
 voice 1 to all other voices so that they need only be declared
 once in voice 1. This would provide another solution to the problem
 discussed in December 18 2004 resulting in the introduction
@@ -2894,7 +2894,7 @@ of the -NFNP option. Introduction of this feature is deferred
 for the time being but here is a description of what is involved
 in implementing such a feature.
 
-When parseabc.c sees an instuction eg. !ff!, it calls
+When parseabc.c sees an instruction eg. !ff!, it calls
 event_instruction (in parser2.c) which calls split_string
 which calls event_handle_instruction (in store.c).
 Event_handle_instruction interprets the instruction and
@@ -2904,7 +2904,7 @@ adds an entry DYNAMIC to the feature array and a pointer
 to the string in the pitch array. Note the feature array
 is used to handle all the voices, and the list of voice 
 features are separated by VOICE entries. The problem is
-that it is impossible to propogate the DYNAMIC instructions
+that it is impossible to propagate the DYNAMIC instructions
 to the other voices because the other voices may not exist
 (in the case the voices are specified serially in the abc file). 
 The function writetrack in genmidi.c separates the specific
@@ -3118,7 +3118,7 @@ February 21 2005
 Microtone note capability has been introduced into abc2midi.
 A _/ means lower the pitch of the following note by a half a semitone. 
 A ^/ means raise the pitch of the following note by a half a semitone. 
-The microtone notation does not propogate across a measure but
+The microtone notation does not propagate across a measure but
 applies to only the immediate note. For chords in the same channel
 (voice), the microtone will apply to both notes no matter
 how it has been notated. For example [C_/E] is the same as
@@ -3191,7 +3191,7 @@ K:C
 =C ^/C ^C _/D  D _/D ^C ^/C =C
 
 the second to last note ^/C is played as ^^/C since the
-accidental in the previous note propogates across the measure.
+accidental in the previous note propagates across the measure.
 If you want =^/C you must specify it in this manner.
 If ^/ and _/ satisfy the rules of accidentals then,
 they would be interpreted the same way as double sharps and
@@ -3206,7 +3206,7 @@ by a quarter tone? Presently abc2midi treats it as the
 latter.
 
 To treat the notation as accidentals would mean that the
-quarter tones would propogate across a measure like sharps
+quarter tones would propagate across a measure like sharps
 and flats. This would require introducing more code into
 abc2midi. (Further there would be other issues relating
 to transposition in abc2abc.)
@@ -3334,7 +3334,7 @@ K:G
 
 March 28 2005
 
-Acciaccatura grace note notation. Abcm2ps compatability feature.
+Acciaccatura grace note notation. Abcm2ps compatibility feature.
 Abc2mps accepts the notation {/b}a where the slash before the
 b tells it to display the grace note b as an acciaccatura.
 Parseabc.c does not understand this notation and returns an
@@ -3377,7 +3377,7 @@ handles all other notes in channel 0 in a random fashion.
 
 Fix: a new parameter, noteson,  was introduced into the function
 dodeferred which handles all DYNAMIC features. Noteson is
-also a local variable controled by writetrack to specify whether
+also a local variable controlled by writetrack to specify whether
 NOTE features are to be processed by writetrack. This flag
 is now also used by dodeferred to determine whether pitchbend
 MIDI commands are to be inserted.
@@ -3461,7 +3461,7 @@ in parseabc.c was moved into store.c, yapstree.c, and
 toabc.c .The function parsetune was placed in parseabc.c.
 All makefiles were updated. (I cannot verify all of them;
 report any corrections to me.) The files abcstore.c and abcparse.c
-are no longer needed; delete them if they are lieing around.
+are no longer needed; delete them if they are lying around.
 
 April 29 2005
 
@@ -4082,11 +4082,11 @@ V:2
 %%MIDI program 2 50
 z2E4 D2 C8
 
-Unfortunately, the %%MIDI channel 2 did not propogate
+Unfortunately, the %%MIDI channel 2 did not propagate
 to the split voice. Voice 1 was assigned channel 2 but voice 2
 still had channel 1 (writetrack automatically assigns the
 first channel which is not in use). The bug was fixed by
-ensuring the CHANNEL feature also propogates into the split voice.
+ensuring the CHANNEL feature also propagates into the split voice.
 
 You may wonder why X:2 worked correctly. This is because
 the MIDI program command without the channel indication applies
@@ -4364,7 +4364,7 @@ is called from the function dodeferred().
 
 November 6 2005
 
-Abc2midi: split voice does not propogate the octave shift
+Abc2midi: split voice does not propagate the octave shift
 command. eg.
 
 X:15
@@ -4857,7 +4857,7 @@ added to dotie().
 July 29 2006
 
 Abc2midi: It is not commonly known that accidentals are  not
-supposed to propogate across octaves. In the follow example,
+supposed to propagate across octaves. In the follow example,
 
 X:1
 T: accidentals and octaves
@@ -6598,7 +6598,7 @@ blocks inscribe the words or notes in the MIDI file depending on
 the status of the wordson and noteon semaphores.
 The gchord accompaniment is placed in a separate
 track, gchordtrack which was set by finishfile() in store.c. The
-voice containing the gchord indications is passed frome store.c
+voice containing the gchord indications is passed from store.c
 to genmidi.c by means of the variable gchordvoice. The same applies
 to drumtrack and dronetrack which rely on drumvoice and dronevoice
 to establish the synchronization.
@@ -6795,7 +6795,7 @@ Abc2abc does not copy s: and d: (symbols and decoration
 lines)  but instead puts a blank line. In the following example:
 
 X: 2
-T:Aaron's (Rarified) Air
+T:Aaron's (Rarefied) Air
 M:4/4
 L:1/4
 K:G
@@ -6809,7 +6809,7 @@ abc2abc example.abc
 
 abc2abc aaron.abc -t 2
 X:2
-T:Aaron's (Rarified) Air
+T:Aaron's (Rarefied) Air
 M:4/4
 L:1/4
 K:Amaj
@@ -6957,7 +6957,7 @@ not support this feature presently.
 
 May 20 2010
 
-Abc2midi in compatiblity. For the following example
+Abc2midi in compatibility. For the following example
 
 
 X: 1
@@ -7285,7 +7285,7 @@ L: is set to 1/8 the MIDI file is correct.
 Analysis: 
 v->default_length has the wrong value for the split voice.
 
-Fix: in event_split_voice (store.c) v->default_length is transfered to
+Fix: in event_split_voice (store.c) v->default_length is transferred to
 the split voice.
 
 
@@ -8029,7 +8029,7 @@ abc.h -- a new featuretype META is added
 store.c -- a new flag int easyabcmode is introduced. It is set to
 1 when the -EA run time parameter is included.  addfeature(META,...
 inserts the line number and line position into the feature, num, denom,...
-structure whenever a chord or note is started. (Seach for easyabcmode
+structure whenever a chord or note is started. (Search for easyabcmode
 in the source code store.c).
 genmidi.c -- in the switch control structure in writetrack() a new
 branch case META: was added. Presently, it merely prints the line
@@ -8610,13 +8610,13 @@ array words[]. It indicates the particular entry location in the words[]
 using the WORDLINE feature.  During the final pass, writetrack() calls
 write_syllable() each time it encounters a NOTE, TNOTE (tied note), CHORDOFF
 (end of chord). At the end of line of notes signaled by MUSICSTOP,
-checksyllables() is called which merely verifies that it had sucessfully
+checksyllables() is called which merely verifies that it had successfully
 matched the notes with the line of lyrics. For this to work properly,
 findwline() must associate the line of music with the line of lyrics
 stored in the words[] array. Given a starting location in the feature[]
 which matches a particular music line in the tune, findwline searches
 the feature[] array for the next WORDLINE feature where it will get
-the address of the lyrics in the words[] array. This seach is aborted
+the address of the lyrics in the words[] array. This search is aborted
 if findwline() encounters a WORDSTOP, PART, VOICE, or MUSICLINE prior
 to WORDLINE. The starting location for this search is given in the
 global variable thismline which gives the location of the last MUSICLINE
@@ -8886,7 +8886,7 @@ April 1 2012
 Abc2midi: new feature. Introduced a new option (-TT)  to tune the key of
 A above or below 440.0 Hz but less than a semitone. The output MIDI
 file will re-tune to that frequency. The purpose of this feature
-is to accommodate some instruments like the accordian which are
+is to accommodate some instruments like the accordion which are
 not tuned exactly to 440.0 Hz.
 
 Implementation: in store.c introduced two new globals
@@ -10037,7 +10037,7 @@ Analysis: the local variable vel in the function noteon() may end
 up being undefined. In certain cases stress_factors() called
 by noteon() may not set the variable vel, in which case
 we expect note_beat() to be called. Unfortunately, if vel
-was initally nonzero note_beat is note called and vel
+was initially nonzero note_beat is note called and vel
 has a random value.
 
 Fix: initialize vel to 0 in noteon().
@@ -10647,7 +10647,7 @@ K:D
 
 Both z6 and [A,DF]2 are doubled in length.
 
-Incidently if we substituted Hz6 for !fermata!z6, the
+Incidentally if we substituted Hz6 for !fermata!z6, the
 program works correctly. 
 
 Analysis: as evident in this file, this is not the
@@ -10818,7 +10818,7 @@ L: 1/8
 K: Ab _F__B_/2C
 F2 B2|C2D2|
 
-The double flat preceeding B in the key signature was interpreted
+The double flat preceding B in the key signature was interpreted
 as a single flat and B2 in the first bar was converted to Bb instead
 of A.
 
@@ -11148,7 +11148,7 @@ of 'octave_cents' (default is the octave = 1200 cents).
 The optional parameter 'fifth_steps', if provided, is an integer that
 defines the size of the fifth in steps of the temperament.
 This sets where is the note G in the temperament.
-When 'fifth_steps' is omited or 0 (zero), the program computes it
+When 'fifth_steps' is omitted or 0 (zero), the program computes it
 as an approximation of the frequency ratio 3/1, minus the
 (possibly tempered) octave.
 The optional 'sharp_steps' defines the meaning of the accidentals.
@@ -12107,4 +12107,9 @@ into parseabc.c and toabc.c which responds to the abc2abc runtime
 parameters -nokeys and -nokeyf. In parsekey() in parseabc.c,
 the control variable nokey is initialized to nokeysig.
 
- 
+March 15 2016
+
+Fixed an assortment of spelling mistakes in the documentation in
+this file. (Also readme.txt, abcguide.txt, genmidi.c, toabc.c, abc2midi.1,  
+crack.c,  midi2abc.1, history.txt, coding.txt). Thank you Ross Gammon.
+

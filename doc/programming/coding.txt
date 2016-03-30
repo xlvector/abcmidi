@@ -254,7 +254,7 @@ element (e.g. a note) involves the following :
 The abc parser
 --------------
 The parser (parseabc.c) has been written in such a way that it forms 
-an independant unit which must be linked with routines to handle
+an independent unit which must be linked with routines to handle
 parsed units. This is very similar to the way that the
 midifilelib utilities work. 
 
@@ -302,7 +302,7 @@ event_linebreak()
 - called whenever a newline character is encountered.
 
 event_blankline()
-- called whenver a blank line is encountered.
+- called whenever a blank line is encountered.
 
 event_eof()
 - called when the end of file is reached.
