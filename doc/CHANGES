@@ -12113,8 +12113,6 @@ Fixed an assortment of spelling mistakes in the documentation in
 this file. (Also readme.txt, abcguide.txt, genmidi.c, toabc.c, abc2midi.1,  
 crack.c,  midi2abc.1, history.txt, coding.txt). Thank you Ross Gammon.
 
-<<<<<<< 40bcc29d55303394d5002b193de8cb530a6f7c9c
-=======
 
 May 05 2016
 
@@ -12151,4 +12149,3 @@ code from event_note, so that key modifiers were transposed
 the same way the notes in the music body are modified.
 
 
->>>>>>> abcmidi-2016-05-05
