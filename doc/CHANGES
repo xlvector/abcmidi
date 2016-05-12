@@ -12113,3 +12113,42 @@ Fixed an assortment of spelling mistakes in the documentation in
 this file. (Also readme.txt, abcguide.txt, genmidi.c, toabc.c, abc2midi.1,  
 crack.c,  midi2abc.1, history.txt, coding.txt). Thank you Ross Gammon.
 
+<<<<<<< 40bcc29d55303394d5002b193de8cb530a6f7c9c
+=======
+
+May 05 2016
+
+Abc2abc: transposition of key modifier bug.
+
+The following example illustrates a problem with the code
+to transpose the key modifiers.
+
+X: 25
+T: C Natural, with a D sharp added to the key signature
+M: 2/4
+L: 1/8
+K: C ^d
+| cdef | gabc |
+
+Transposing this up by one tone (-t 2), this becomes
+
+X:25
+T:C Natural, with a D sharp added to the key signature
+M:2/4
+L:1/8
+K:Dmaj =F
+| defg | abc'd |
+
+The key modifier was transposed to F natural instead of
+e sharp (chromatically identical notes) but as a result
+ e was not upgraded to e# and the f# became f natural.
+
+The fix was a completely replacement of the code written
+in February 21 2011 (see above) in toabc.c. 130 lines of
+code was eliminated and a new function transpose_note()
+was introduced. The new function borrowed the transposition
+code from event_note, so that key modifiers were transposed
+the same way the notes in the music body are modified.
+
+
+>>>>>>> abcmidi-2016-05-05

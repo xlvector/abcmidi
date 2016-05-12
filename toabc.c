@@ -21,7 +21,7 @@
 
 /* back-end for outputting (possibly modified) abc */
 
-#define VERSION "1.85 March 03 2016 abc2abc"
+#define VERSION "1.86 May 05 2016 abc2abc"
 
 /* for Microsoft Visual C++ 6.0 or higher */
 #ifdef _MSC_VER
@@ -145,6 +145,8 @@ void copymap();
 void printpitch(int);
 void setup_sharps_flats (int sf);
 int pitchof(char note,int accidental,int mult,int octave);
+void transpose_note(char xaccidental,int xmult,char xnote,int xoctave,int transpose,
+    char* accidental, int* mult, char* note, int* octave);
 
 
 static int purgespace(p)
@@ -1448,23 +1450,10 @@ strcat(keysignature,mode[modeindex]);
     
  */
 
-int debugsemi = 0;  /* set to one if debugging ! [SS] 2011-02-21 */
-int semiseq[12];
-int semiseqbase[12];
 
 char modmap[7];
-int convertnote[7] = {0,2,3,5,7,8,10};
-/* needed to convert modmap to semiseq representation */
 
-int sfpos[7] = {8, 3, 10, 5, 0, 7, 2}; /* FCGDAEB */
-int sfneg[7] = {2, 7, 0, 5, 10, 3, 8};
-/* needed to convert the key signature to semiseq representation */
 
-char *semisharp[12] = {"=A", "^A", "=B", "=C", "^C", "D",
-  "^D", "=E", "=F", "^F", "=G", "^G"};
-char *semiflat[12] = {"=A", "_B", "=B", "=C", "_D", "=D",
-  "_E", "=E", "=F", "_G", "=G", "_A"};
-/* needed to convert the semiseq representation to the notes */
 
 int modmap_not_empty (char* modmap) {
 int i;
@@ -1473,118 +1462,9 @@ for (i=0;i<7;i++)
 return 0;
 }
 
-void print_semiseq();
-
-void sf2semi (int sf) {
-/* apply key signature to semiseq */
-  int i;
-  for (i=0;i<12;i++) semiseqbase[i]=0;
-  for (i=0;i<7;i++) semiseqbase[sfpos[i]] = 1;
-  if (sf == 0) return;
-  if (sf > 0) {for (i=0;i<sf;i++) {
-       semiseqbase[sfpos[i]] = 0;
-       semiseqbase[sfpos[i]+1] = 1;
-       }
-     return;
-     } else {
-  sf = -sf;
-  for (i=0;i<sf;i++) {
-      semiseqbase[sfneg[i]] = 0;
-      semiseqbase[(sfneg[i] + 11) % 12] = 1;
-      }
-  }
-}
-
-void note2semi (char *modmap) {
-/* to convert modmap to semiseq representation */
-int i;
-int semi;
-for (i=0;i<8;i++) {
-  semi = convertnote[i];
-  switch (modmap[i]) {
-    case ' ': 
-      break;
-    case '=': 
-     semiseq[semi] = 1;
-     if (semiseq[(semi+1) % 12]) semiseq[(semi+1) % 12] = 0;
-     else semiseq[(semi+11) % 12] = 0;
-     break;
-      
-    case '^': 
-      semiseq[semi] = 0;
-      semiseq[semi+1] = 1; 
-      break;
-    case '_': 
-      semiseq[semi] = 0;
-      semiseq[(semi+11) % 12] = 1;
-      break;
-    }
-  }
-}
-
-void transpose_semiseq (shift)
-int shift;
-{
-int i,j;
-int newseq[12];
-for (i=0;i<12;i++) {
-  j = (i-shift+12)%12;
-  newseq[i] = semiseq[j];
-  }
-for (i=0;i<12;i++) semiseq[i]=newseq[i];
-}
-
-void print_semiseq() {
-  int i;
- if (!debugsemi) return; /* [SS] 2011-02-11 */
-  printf(" A   B C   D   E F   G\n");  
-  for (i=0;i<12;i++) printf(" %d",semiseq[i]);
-  printf("\n");  
-}
-
-char trans_string[20];
-
-char *pickup_accidentals_for (int sf, int explict) {
-/* remove non-accidentals */
-int i;
-if (explict) sf2semi(0);
-else sf2semi(sf);
-/* [SS] 2011-02-20 */
-if (debugsemi) {
-  for (i=0;i<12;i++) printf(" %d",semiseqbase[i]);
-  printf(" semiseqbase\n");
-  }
-
-/* everything left are accidentals */
-trans_string[0] = ' ';
-for (i=0;i<12;i++)
-  if(semiseq[i] != semiseqbase[i] && semiseqbase[i] == 0) {
-    if (sf <0) strcat(trans_string,semiflat[i]);
-    else strcat(trans_string,semisharp[i]);
-    }
-return  trans_string;
-  };
-
-char *transpose_modmap(int oldkeysigsf, int semitranspose, char* modmap, int explict) {
-  int newkeysigsf;
-  int i;
-  newkeysigsf = (oldkeysigsf + 7*semitranspose)%12;
-  if (newkeysigsf > 6) newkeysigsf = newkeysigsf -12;
-  if (newkeysigsf <-5) newkeysigsf = newkeysigsf +12;
-  if (debugsemi) printf("newkeysigsf= %d\n",newkeysigsf);
-  sf2semi(oldkeysigsf);
-  for (i=0;i<12;i++) semiseq[i] = semiseqbase[i];
-  print_semiseq();
-  note2semi(modmap);
-  if (debugsemi) printf("applying note2semi\n");
-  print_semiseq();
-  transpose_semiseq(semitranspose);
-  if (debugsemi) printf("applying transpose %d\n",semitranspose);
-  print_semiseq();
-  return pickup_accidentals_for(newkeysigsf,explict);
-  }
 
 /* end of [SS] 2011-02-15 */
+
 
 void event_key(sharps, s, modeindex, modmap, modmul, modmicrotone,  gotkey, gotclef, clefname,
           octave, xtranspose, gotoctave, gottranspose, explict)
@@ -1602,6 +1482,14 @@ int explict;
   static char* keys[12] = {"Db", "Ab", "Eb", "Bb", "F", "C", 
                            "G", "D", "A", "E", "B", "F#"};
   char signature[10];
+
+  /* [SS] 2016-05-05 */
+  int i,k,slength; 
+  int xmult,xoctave;
+  int mult;
+  char accidental,note,xnote;
+  char  trans_string[32];
+
 
   if (!xinbody && passthru) {print_inputline_nolinefeed(); /* [SS] 2011-06-10 */
                             if ((xinhead) && (!xinbody)) {
@@ -1630,9 +1518,44 @@ int explict;
     };
     setmap(newkey, newtable);  /* used by event_note1 */
     new_key_number = (int) keys[newkey+5][0] - (int) 'A';
+
+    /* [SS] 2016-05-05  begin */
+    trans_string[0] = 0;
     if  (modmap_not_empty (modmap)) {
-        transpose_modmap(sharps,transpose,modmap,explict); 
-        }
+        k=0;
+        trans_string[k++] = ' ';
+        xmult = 1;
+        xoctave = 1;
+        slength = strlen(s);
+        /*printf("length of s = %d\n",slength);*/
+        for (i = 0; i<slength;i++) {
+           switch (*(s+i)) {
+               case '^':
+               case '_':
+               case '=':
+                  /*printf("%c%c\n",*(s+i),*(s+i+1)); */
+                  xnote = *(s+i+1);
+                  if (xnote >= 'A' && xnote <= 'G') {
+                     xnote = xnote + 'a' - 'A';
+                     xoctave = 0;
+                     }
+                  if (xnote < 'a' || xnote > 'g') {
+                      event_error ("expecting A-G or a-g after accidental in key modifier");
+                      break;
+                      }
+                  transpose_note(*(s+i),xmult, xnote, xoctave, transpose,
+                    &accidental, &mult, &note, &octave);
+                  /*printf("%c%c\n",accidental,note); */
+                  trans_string[k++] = accidental;
+                  if (mult == 2)
+                     trans_string[k++] = accidental;
+                  trans_string[k++] = note;
+                  break;
+               }
+        }      
+        trans_string[k] =0;
+      }
+      /* [SS] 2016-05-05 end */
     
   };
   emit_string("K:");
@@ -2223,6 +2146,71 @@ int n;
     };
   };
 }
+
+
+/* [SS] 2016-05-05 */
+/* This function is used to transpose the key signature modifiers. */
+/* The code was borrowed from event_note1().                       */
+void transpose_note(xaccidental,xmult, xnote, xoctave, transpose,
+    accidental, mult, note, octave)
+char xaccidental, xnote;
+int xoctave, transpose;
+char *accidental, *note;
+int *octave, *mult;
+{
+  *mult = 0; 
+  if (transpose == 0 || drumchan) {
+    *accidental = xaccidental;
+    *mult = xmult;
+    *note = xnote;
+    *octave = xoctave;
+    } else {
+    int val, newval;
+    int acc;
+    char *anoctave = "cdefgab";
+
+    *octave = xoctave;
+    val = (int) ((long) strchr(anoctave, xnote) - (long) anoctave);
+    newval = val + lines;
+    *octave = *octave + (newval/7);
+    newval = newval % 7;
+    if (newval < 0) {
+      newval = newval + 7;
+      *octave = *octave - 1;
+    };
+    *note = *(anoctave+newval);
+    if (xaccidental == ' ') {
+      *accidental = ' ';
+    } else {
+      switch (xaccidental) {
+      case '_':
+        acc = -xmult;
+        break;
+      case '^':
+        acc = xmult;
+        break;
+      case '=':
+        acc = 0;
+        break;
+      default:
+        event_error("Internal error");
+      };
+      acc = acc - oldtable[(int)anoctave[val] - (int)'a'] + 
+                  newtable[(int)anoctave[newval] - (int)'a'];
+      *mult = 1;
+      *accidental = '=';
+      if (acc > 0) {
+        *accidental = '^';
+        *mult = acc;
+      };
+      if (acc < 0) {
+        *accidental = '_';
+        *mult = -acc;
+      };
+    };
+  }
+}
+
 
 
 
