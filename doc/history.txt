@@ -22,7 +22,7 @@ Improvements made to abcMIDI package
 1. abc2midi was found not to handle comments at end of lines properly. 
 This was fixed in the source code with release 1.2.1 of abc2midi. 
 
-2. midi2abc was generating %MIDI  intead of %%MIDI for a program change.
+2. midi2abc was generating %MIDI  instead of %%MIDI for a program change.
 This was fixed in release 1.6.1
 
 3. Release 1.2.2 of abc2midi introduced the -c checking only option and
@@ -62,7 +62,7 @@ This was fixed in release 1.6.1
 
 17. Fixed various type inconsistencies in midifile.c to improve portability.
 
-18. abc2midi was not handling propogation of accidentals within a bar e.g.
+18. abc2midi was not handling propagation of accidentals within a bar e.g.
 |^cdc|. This was fixed.
 
 19. Added handling for the 7 key signature modes and re-wrote parsekey in

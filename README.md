@@ -2,12 +2,12 @@
 
 | Program | Version No. |  Date Updated |
 |:--------|:------------|:--------------|
-|midi2abc |version 2.99 |October 18 2015 |
-|abc2midi |version 3.88 |February 08 2015 |
-|abc2abc  |version 1.85 |March 03 2016 |
-|yaps     |version 1.63 |November 15 2015 |
-|abcmatch |version 1.70 |November 15 2015 |
-|midicopy |version 1.22 |November 15 2015 |
+|midi2abc |version 2.96 |August 03 2015 |
+|abc2midi |version 3.70 |August 11 2015 |
+|abc2abc  |version 1.81 |July 02 2015 |
+|yaps     |version 1.62 |May 13 2015 |
+|abcmatch |version 1.67 |May 13 2015 |
+|midicopy |version 1.18 |October 01 2013 |
 
 > 24th January 2002
 > 
@@ -19,7 +19,7 @@
 > June 2015
 > 
 > Seymour Shlien
-> fy733@ncf.ca
+> seymour.shlien@crc.ca
 
 This is free software. You may copy and re-distribute it under the terms of the GNU General Public License version 2 or later, which is available from the Free Software Foundation (and elsewhere).
 
@@ -36,7 +36,7 @@ These programs make use of the '`midifilelib`' public domain MIDI file utilities
 
 [www.harmony-central.com/MIDI/midifilelib.tar.gz](http://www.harmony-central.com/MIDI/midifilelib.tar.gz)
 
-If you have the source distribution and intend to re-compile the code, read the file coding.txt.
+If you have the source distribution and intend to re-compile the code, read the file `coding.txt`.
 
 `midi2abc` - program to convert MIDI format files to abc notation.
 
@@ -59,11 +59,11 @@ This program takes a MIDI format file and converts it to something as close as p
 
 ### What midi2abc does not do :
 
-* Supply tune title, composer or any other field apart from `X:` , `K:`, `Q:`, `M:` and `L:` - these must be added by hand afterwards, though they may have been included in the text of the MIDI file.
+* Supply tune title, composer or any other field apart from `X:`, `K:`, `Q:`, `M:` and `L:` - these must be added by hand afterwards, though they may have been included in the text of the MIDI file.
 * Support duplets, quadruplets, other esoteric features.
 * Support mid-tune key or meter changes.
 * Deduce repeats. The output is just the notes in the input file.
-* Recover an abc tune as supplied to `abc2midi`. However, if you want to do this, "`midi2abc -xa -f file.mid`" comes close.
+* Recover an abc tune as supplied to `abc2midi`. However, if you want to do this, `midi2abc -xa -f file.mid` comes close.
 
 `midi2abc`
 

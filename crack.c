@@ -12,7 +12,7 @@
  * where the flags are of the form -foption, that is, a minus, a character
  * and an optional argument, butted up to the character.  No space may
  * appear between any flag and its option.  The first command line
- * argument not preceeded by '-' is taken as the end of the flags and the
+ * argument not preceded by '-' is taken as the end of the flags and the
  * beginning of file names.
  * 
  * The flags argument to crack looks like this: "a|b|cd" for flags a b c

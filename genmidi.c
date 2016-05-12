@@ -723,7 +723,7 @@ int xtrack, voice, place;
 }
 
 static int findvoice(initplace, voice, xtrack)
-/* find where next occurence of correct voice is */
+/* find where next occurrence of correct voice is */
 int initplace;
 int voice, xtrack;
 {
@@ -3095,7 +3095,7 @@ int xtrack;
       };
       break;
     case VOICE:
-      /* search on for next occurence of voice */
+      /* search on for next occurrence of voice */
       j = findvoice(j, trackvoice, xtrack);
       /* [SS] 2011-12-11 inline voice commands are not followed
        by MUSICLINE where we would normally get thismline */
@@ -3166,7 +3166,7 @@ int xtrack;
       else {
      /* we could have multi repeats.                        */
      /* pass = 1;          [SS] 2004-10-14                  */
-     /* we could have accidently have                       */
+     /* we could have accidentally have                       */
      /*   |: .sect 1..  :| ...sect 2 :|.  We  don't want to */
      /* go back to sect 1 when we encounter :| in sect 2.   */
      /* We signal that we will expect |: but we wont't check */
