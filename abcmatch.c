@@ -883,7 +883,7 @@ match_samples (int mmsamples, int *mmpitch_samples)
 int
 match_any_bars (int tpbars, int barnum, int delta_key, int nmatches)
 {
-/* This function reports any bars in match template  match a paticular
+/* This function reports any bars in match template  match a particular
  * bar (barnum) in the tune. If a match is found then barnum is 
  * reported.  It runs in one of two modes depending on the value
  * of the variable called resolution.

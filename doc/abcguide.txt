@@ -1112,7 +1112,7 @@ portamento is followed by "bass" or "chord", the event will be
 applied to the bass or chord channel, otherwise it will be 
 applied to the current channel. The parameter n should be between
 0 and 63. Large values imply a slow transition between pitches.
-I have found the resulting effect to be rather wierd, especially
+I have found the resulting effect to be rather weird, especially
 for large pitch intervals.
 
 %%MIDI noportamento [bass/chord] 
@@ -1294,7 +1294,7 @@ with this command, they are no longer available and since
 there are only 16 MIDI channels you can easily run out.
 Furthermore, you need to allocate chordchannels for any
 other voices which may have in voice chords. The channel
-allocation process will automatically propogate the program
+allocation process will automatically propagate the program
 assignment (musical instrument) to the other chordchannels,
 so be sure you set the program before using this command.
 If you need to change the program assignments, you can
@@ -1364,7 +1364,7 @@ where n is either 1 or 2, selects the stress model implementation.
 This command,causes  all the following notes be lengthened by
 the amount factor m/n so that they overlap the next note.
 Thus the next note is started at the proper time, but the
-prevous note ends after the beggining of the note.
+previous note ends after the beggining of the note.
 This overlap causes a nice effect for particular MIDI instruments
 such as choir voices. The %%MIDI expand function behaves in
 the opposite manner as the %%MIDI trim function.
